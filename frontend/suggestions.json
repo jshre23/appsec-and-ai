@@ -1,0 +1,67 @@
+[
+  {
+    "type": "benign",
+    "title": "Simple GET Request",
+    "example": {
+      "Method": "GET",
+      "User-Agent": "Mozilla/5.0",
+      "host": "example.com",
+      "content-type": "application/x-www-form-urlencoded",
+      "URL": "http://example.com/home",
+      "request_body": ""
+    },
+    "reason": "No suspicious keywords, short URL, no login or sensitive params."
+  },
+  {
+    "type": "benign",
+    "title": "Static Asset Request",
+    "example": {
+      "Method": "GET",
+      "User-Agent": "Chrome",
+      "host": "static.example.com",
+      "content-type": "text/html",
+      "URL": "http://static.example.com/logo.png",
+      "request_body": ""
+    },
+    "reason": "Request for static file, no suspicious content."
+  },
+  {
+    "type": "malicious",
+    "title": "SQL Injection Attempt",
+    "example": {
+      "Method": "POST",
+      "User-Agent": "Mozilla/5.0",
+      "host": "example.com",
+      "content-type": "application/x-www-form-urlencoded",
+      "URL": "http://example.com/login",
+      "request_body": "username=admin' OR 1=1--&password=123"
+    },
+    "reason": "Suspicious SQL keywords in body, login endpoint."
+  },
+  {
+    "type": "malicious",
+    "title": "XSS Attempt in Body",
+    "example": {
+      "Method": "POST",
+      "User-Agent": "Mozilla/5.0",
+      "host": "example.com",
+      "content-type": "application/x-www-form-urlencoded",
+      "URL": "http://example.com/comment",
+      "request_body": "<script>alert('xss')</script>"
+    },
+    "reason": "Script tag in body, typical XSS pattern."
+  },
+  {
+    "type": "malicious",
+    "title": "Suspicious File Access",
+    "example": {
+      "Method": "GET",
+      "User-Agent": "Mozilla/5.0",
+      "host": "example.com",
+      "content-type": "application/x-www-form-urlencoded",
+      "URL": "http://example.com/?file=../../etc/passwd",
+      "request_body": ""
+    },
+    "reason": "File traversal pattern in URL."
+  }
+]

@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Web Security - Home</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+      .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        max-width: 100vw;
+      }
+      /* Sticky first column for URL */
+      .table td.sticky-col, .table th.sticky-col {
+        position: sticky;
+        left: 0;
+        background: #fffbe7;
+        z-index: 4;
+        box-shadow: 2px 0 6px -2px #fda08522;
+      }
+      @media (max-width: 900px) {
+        .svm-col, th.svm-col { display: none !important; }
+        .table td, .table th { font-size: 0.87rem; padding: 0.18rem 0.18rem; }
+      }
+      body {
+        background: linear-gradient(120deg, #f6d365 0%, #fda085 100%);
+        min-height: 100vh;
+        font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+        position: relative;
+      }
+      .benign-icon {
+        color: #28a745;
+        filter: drop-shadow(0 0 2px #b2f7c2);
+      }
+      .malicious-icon {
+        color: #dc3545;
+        filter: drop-shadow(0 0 2px #f7b2b2);
+      }
+      .table-row-clickable {
+        cursor: pointer;
+        transition: background 0.2s, box-shadow 0.2s;
+      }
+      .table-row-clickable:hover {
+        background: #f6d36522 !important;
+        box-shadow: 0 2px 12px #fda08533;
+        z-index: 2;
+      }
+      .card {
+        border-radius: 1.1rem;
+        transition: transform 0.18s, box-shadow 0.18s;
+      }
+      .card:hover {
+        transform: translateY(-4px) scale(1.03);
+        box-shadow: 0 6px 24px #fda08555;
+      }
+      .table {
+        background: #fff8f0;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 2px 18px #fda08533;
+        animation: fadeIn 0.7s;
+        margin-bottom: 0;
+      }
+      .table thead th {
+        background: linear-gradient(90deg, #f6d365 0%, #fda085 100%);
+        color: #333;
+        font-weight: 600;
+        border: none;
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        box-shadow: 0 2px 8px #fda08522;
+        font-size: 0.97rem;
+        letter-spacing: 0.01em;
+        padding-top: 0.38rem;
+        padding-bottom: 0.38rem;
+      }
+      .table-striped tbody tr:nth-of-type(odd) {
+        background: linear-gradient(90deg, #fffbe7 80%, #f6d36522 100%);
+      }
+      .table-striped tbody tr:nth-of-type(even) {
+        background: linear-gradient(90deg, #fdf6e3 80%, #fda08522 100%);
+      }
+      .table-striped tbody tr {
+        box-shadow: 0 1px 0 #fda08522;
+        transition: background 0.18s, box-shadow 0.18s;
+      }
+      .table-striped tbody tr:hover {
+        background: #fffde7 !important;
+        box-shadow: 0 2px 12px #fda08533;
+        z-index: 2;
+      }
+      .table-warning {
+        background: linear-gradient(90deg, #fffbe7 60%, #fff3cd 100%) !important;
+        box-shadow: 0 2px 12px #ffe06644;
+      }
+      .table td {
+        font-size: 0.93rem;
+        border: none;
+        padding: 0.38rem 0.7rem 0.38rem 0.7rem;
+        background: none;
+        vertical-align: middle;
+        transition: background 0.2s, box-shadow 0.18s;
+        line-height: 1.35;
+      }
+      .badge-pill {
+        display: inline-block;
+        padding: 0.13em 0.7em;
+        font-size: 0.93em;
+        font-weight: 600;
+        border-radius: 1.2rem;
+        background: #f6d36522;
+        color: #333;
+        margin: 0 0.07em;
+        box-shadow: 0 1px 4px #fda08522;
+        letter-spacing: 0.01em;
+      }
+      .badge-danger {
+        background: linear-gradient(90deg, #fda085 60%, #f6d365 100%);
+        color: #b30000;
+      }
+      .badge-success {
+        background: linear-gradient(90deg, #b2f7c2 60%, #f6d365 100%);
+        color: #1e7e34;
+      }
+      .badge-warning {
+        background: linear-gradient(90deg, #fff3cd 60%, #f6d365 100%);
+        color: #856404;
+      }
+      .badge-reason {
+        background: #e0eafc;
+        color: #333;
+        font-weight: 500;
+      }
+      .modal-content {
+        border-radius: 1.2rem;
+        box-shadow: 0 4px 32px #fda08555;
+        animation: popIn 0.5s;
+      }
+      .modal-header {
+        background: linear-gradient(90deg, #f6d365 0%, #fda085 100%);
+        color: #fff;
+        border-top-left-radius: 1.2rem;
+        border-top-right-radius: 1.2rem;
+      }
+      .btn {
+        border-radius: 2rem;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+        transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+      }
+      .btn-outline-primary:hover, .btn-outline-success:hover, .btn-outline-danger:hover, .btn-outline-info:hover, .btn-outline-warning:hover {
+        box-shadow: 0 2px 8px #fda08533;
+        background: #fda085;
+        color: #fff !important;
+      }
+      .btn-outline-secondary:hover {
+        background: #f6d365;
+        color: #fff !important;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: none; }
+      }
+      @keyframes popIn {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+      }
+      footer {
+        position: fixed;
+        left: 0; right: 0; bottom: 0;
+        background: linear-gradient(90deg, #f6d365 0%, #fda085 100%);
+        color: #fff;
+        text-align: center;
+        padding: 0.5rem 0;
+        font-size: 1rem;
+        letter-spacing: 0.04em;
+        z-index: 100;
+        box-shadow: 0 -2px 12px #fda08533;
+      }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+    <!-- Animated header bar -->
+    <div class="mb-4" style="height: 6px; background: linear-gradient(90deg, #f6d365 0%, #fda085 100%); border-radius: 2px;"></div>
+    <footer>
+      <span>🚀 AI Web Security Dashboard &copy; 2025 | <i class="fa fa-heart text-danger"></i> Modern UI</span>
+    </footer>
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold text-primary"><i class="fa fa-shield-alt me-2"></i>Appsec-RevProx-mini</h2>
+        <nav>
+          <a href="/manual" class="btn btn-outline-primary btn-sm me-2"><i class="fa fa-keyboard"></i> Manual Entry</a>
+          <a href="/dvwa/" class="btn btn-outline-secondary btn-sm me-2"><i class="fa fa-flask"></i> DVWA</a>
+          <a href="/logs" class="btn btn-outline-info btn-sm me-2"><i class="fa fa-file-alt"></i> Logs</a>
+          <a href="/predict" class="btn btn-outline-success btn-sm"><i class="fa fa-magic"></i> Simulate Prediction</a>
+        </nav>
+      </div>
+      <!-- Suggestions Box -->
+      <div class="row mb-4">
+        <div class="col-12 mb-3">
+          <div class="card shadow-sm border-0" style="background: linear-gradient(90deg, #e0eafc 0%, #cfdef3 100%);">
+            <div class="card-body position-relative">
+              <h5 class="card-title mb-3"><i class="fa fa-lightbulb text-warning me-2"></i>Model Suggestions</h5>
+              <div class="d-flex align-items-center justify-content-center" style="min-height: 170px;">
+                <button id="suggestionLeft" class="btn btn-outline-secondary btn-sm me-2" style="border-radius:50%;width:2.2rem;height:2.2rem;display:flex;align-items:center;justify-content:center;"><i class="fa fa-arrow-left"></i></button>
+                <div id="suggestionCarousel" class="flex-grow-1" style="max-width: 600px;">
+                  <!-- Suggestions will be injected here -->
+                </div>
+                <button id="suggestionRight" class="btn btn-outline-secondary btn-sm ms-2" style="border-radius:50%;width:2.2rem;height:2.2rem;display:flex;align-items:center;justify-content:center;"><i class="fa fa-arrow-right"></i></button>
+              </div>
+              <div class="text-muted mt-2" style="font-size:0.95rem;">
+                <i class="fa fa-info-circle"></i> These are typical examples. The model uses features like suspicious keywords, parameter count, and special characters to classify requests.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="mb-3 d-flex justify-content-end">
+          <a href="/download_feedback" class="btn btn-outline-warning btn-sm">
+            <i class="fa fa-download"></i> Download Feedback CSV
+          </a>
+        </div>
+        <div class="col-md-4 mb-2">
+          <div class="card shadow-sm border-0 bg-light">
+            <div class="card-body text-center">
+              <div class="fs-3 fw-bold text-dark" id="total-reqs"><i class="fa fa-list me-2"></i> <span id="stat-total">-</span></div>
+              <div class="text-muted">Total Requests</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4 mb-2">
+          <div class="card shadow-sm border-0 bg-light">
+            <div class="card-body text-center">
+              <div class="fs-3 fw-bold text-success"><i class="fa fa-shield-alt benign-icon" title="Benign"></i><span id="stat-benign">-</span></div>
+              <div class="text-muted">Benign</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4 mb-2">
+          <div class="card shadow-sm border-0 bg-light">
+            <div class="card-body text-center">
+              <div class="fs-3 fw-bold text-danger"><i class="fa fa-bug malicious-icon me-2"></i> <span id="stat-malicious">-</span></div>
+              <div class="text-muted">Malicious</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="d-flex justify-content-end align-items-center mb-2">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="toggleSVM" checked>
+          <label class="form-check-label" for="toggleSVM" style="font-size:0.98rem;">Show SVM Anomaly Columns</label>
+        </div>
+        <span class="ms-3" style="font-size:0.97rem; color:#555;">
+          <i class="fa fa-info-circle text-primary" title="Explanation"></i>
+          <span id="anomalyExplanation">
+            <b>Behavioral Anomaly</b> uses IsolationForest to detect unusual session behavior (requests/session, session duration, etc). <b>SVM Anomaly</b> uses OneClassSVM for unsupervised anomaly detection on the same features. Scores indicate how anomalous a session is; higher means more anomalous. Flags show if the request is considered an outlier.
+          </span>
+        </span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped align-middle shadow-sm" id="predTable" style="box-shadow:0 2px 18px #fda08533;">
+          <thead class="table-light align-middle text-center">
+            <tr>
+              <th class="sticky-col" style="width: 120px; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background:#fff; color:#222; font-weight:700; letter-spacing:0.01em; border-right:2px solid #fda085;">
+                <i class="fa fa-link" style="color:#fda085; margin-right:4px;"></i>URL
+              </th>
+              <th style="width: 90px;">Payload</th>
+              <th style="width: 70px;">Class</th>
+              <th style="width: 90px;">Reason</th>
+              <th style="width: 60px;" title="IsolationForest anomaly flag">Beh.?</th>
+              <th style="width: 70px;" title="IsolationForest anomaly score (higher=more anomalous)">Beh. Score <i class="fa fa-question-circle text-info" title="Click for details" onclick="event.stopPropagation(); showScoreHelp('behavioral');" style="cursor:pointer;"></i></th>
+              <th class="svm-col" style="width: 60px;" title="SVM anomaly flag">SVM?</th>
+              <th class="svm-col" style="width: 70px;" title="SVM anomaly score (higher=more anomalous)">SVM Score <i class="fa fa-question-circle text-info" title="Click for details" onclick="event.stopPropagation(); showScoreHelp('svm');" style="cursor:pointer;"></i></th>
+            </tr>
+          </thead>
+          <tbody id="predTableBody">
+            <!-- Dynamic rows will be injected by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Modal for row details and score explanations -->
+      <div class="modal fade" id="rowDetailsModal" tabindex="-1" aria-labelledby="rowDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+              <h5 class="modal-title" id="rowDetailsModalLabel"><i class="fa fa-info-circle"></i> Prediction Details</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table table-bordered">
+                <tbody>
+                  <tr><th>URL</th><td id="modal-url"></td></tr>
+                  <tr><th>Request Body</th><td id="modal-request-body"></td></tr>
+                  <tr><th>Prediction</th><td id="modal-label"></td></tr>
+                  <tr><th>Reason</th><td id="modal-reason"></td></tr>
+                  <tr><th>Behavioral Anomaly Flag</th><td id="modal-beh-flag"></td></tr>
+                  <tr><th>Behavioral Anomaly Score</th><td id="modal-beh-score"></td></tr>
+                  <tr><th>Behavioral Anomaly Explanation</th><td id="modal-beh-anomaly-expl"></td></tr>
+                  <tr><th>Why this Behavioral Score?</th><td id="modal-beh-why"></td></tr>
+                  <tr><th>SVM Anomaly Flag</th><td id="modal-svm-flag"></td></tr>
+                  <tr><th>SVM Anomaly Score</th><td id="modal-svm-score"></td></tr>
+                  <tr><th>SVM Anomaly Explanation</th><td id="modal-svm-anomaly-expl"></td></tr>
+                  <tr><th>Why this SVM Score?</th><td id="modal-svm-why"></td></tr>
+                </tbody>
+              </table>
+              <div id="modal-score-help" style="display:none;"></div>
+            </div>
+            <div class="modal-footer d-flex justify-content-between align-items-center">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <style>
+        .table th, .table td { vertical-align: middle; }
+        .table td { font-size: 0.97rem; }
+        .reason-cell {
+            font-size: 0.97rem;
+        }
+    </style>
+
+    <script>
+      // Real-time predictions polling
+      function updatePredictions() {
+        fetch('/last_predictions')
+          .then(r => r.json())
+          .then(data => {
+            window.lastPredictionsData = data || [];
+            const tbody = document.getElementById('predTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            // XSS Safety: Escape all user data before inserting into HTML
+            function escapeHtml(text) {
+              return String(text)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+            }
+            if (data && data.length > 0) {
+              data.forEach(pred => {
+                let payload = pred.request_body || '-';
+                let payloadClass = pred.label === 'malicious' ? 'text-danger fw-bold' : 'text-success';
+                // Behavioral anomaly
+                let behAnomalyFlag = (pred.behavioral_anomaly_flag === 1 || pred.behavioral_anomaly_flag === '1')
+                  ? '<span class="badge badge-pill badge-danger">Yes</span>'
+                  : '<span class="badge badge-pill badge-success">No</span>';
+                let behAnomalyScore = (typeof pred.behavior_anomaly_score !== 'undefined')
+                  ? `<span class="badge badge-pill badge-reason">${Number(pred.behavior_anomaly_score).toFixed(3)}</span>`
+                  : '-';
+                // SVM anomaly
+                let svmAnomalyFlag = (pred.svm_anomaly_flag === 1 || pred.svm_anomaly_flag === '1')
+                  ? '<span class="badge badge-pill badge-danger">Yes</span>'
+                  : '<span class="badge badge-pill badge-success">No</span>';
+                let svmAnomalyScore = (typeof pred.svm_anomaly_score !== 'undefined')
+                  ? `<span class="badge badge-pill badge-reason">${Number(pred.svm_anomaly_score).toFixed(3)}</span>`
+                  : '-';
+                let warningIcon = '';
+                let warningRowClass = '';
+                if (pred.warning) {
+                  warningIcon = '<i class="fa fa-exclamation-triangle text-warning" title="Suspicious payload detected but no behavioral anomaly"></i> ';
+                  warningRowClass = 'table-warning';
+                }
+                tbody.innerHTML += `
+                  <tr class="text-center align-middle ${warningRowClass} table-row-clickable">
+                    <td class="sticky-col" style="max-width:120px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:0.93em; cursor:pointer;" title="${escapeHtml(pred.url || '-')}" onmouseover="this.style.whiteSpace='normal';this.style.overflow='visible';this.style.textOverflow='clip';" onmouseout="this.style.whiteSpace='nowrap';this.style.overflow='hidden';this.style.textOverflow='ellipsis';">${escapeHtml(pred.url || '-')}</td>
+                    <td style="word-break:break-all;"><span class="badge badge-pill ${payloadClass}" style="font-size:1.01em;">${escapeHtml(payload)}</span></td>
+                    <td>
+                      ${pred.label === 'malicious' ? '<i class="fa fa-exclamation-circle text-danger" title="Malicious"></i>' : ''}
+                      ${pred.label === 'benign' ? '<i class="fa fa-shield-alt text-success" title="Benign"></i>' : ''}
+                      ${pred.warning ? '<i class="fa fa-exclamation-triangle text-warning" title="Warning: Suspicious payload"></i>' : ''}
+                      <span class="badge badge-pill ${pred.label === 'malicious' ? 'badge-danger' : 'badge-success'}" style="font-size:1.01em; margin-left:2px;">${escapeHtml(pred.label || '-')}</span>
+                    </td>
+                    <td style="word-break:break-all;">${warningIcon}<span class="badge badge-pill badge-reason">${escapeHtml(pred.reason || '-')}</span></td>
+                    <td>${behAnomalyFlag}</td>
+                    <td>${behAnomalyScore}</td>
+                    <td class="svm-col">${svmAnomalyFlag}</td>
+                    <td class="svm-col">${svmAnomalyScore}</td>
+                  </tr>
+                `;
+              });
+            } else {
+              tbody.innerHTML = '<tr><td colspan="8" class="text-center">No predictions yet.</td></tr>';
+            }
+          });
+      }
+      setInterval(updatePredictions, 2000); // Poll every 2 seconds
+      document.addEventListener('DOMContentLoaded', updatePredictions);
+      // Toggle SVM columns
+      document.getElementById('toggleSVM').addEventListener('change', function() {
+        const show = this.checked;
+        document.querySelectorAll('.svm-col').forEach(col => {
+          col.style.display = show ? '' : 'none';
+        });
+        // Also hide/show header cells
+        document.querySelectorAll('th.svm-col').forEach(col => {
+          col.style.display = show ? '' : 'none';
+        });
+      });
+      // On load, ensure SVM columns are visible by default
+      document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('toggleSVM').dispatchEvent(new Event('change'));
+      });
+      // Suggestions carousel
+      const modelSuggestions = [
+        {
+          type: 'benign',
+          icon: 'fa-shield-alt',
+          color: 'success',
+          title: 'Example Benign',
+          url: '/home.php?user=alice',
+          method: 'GET',
+          reason: 'Few parameters, no suspicious keywords, normal user-agent.'
+        },
+        {
+          type: 'malicious',
+          icon: 'fa-bug',
+          color: 'danger',
+          title: 'XSS Attack',
+          url: '/search.php?q=%3Cscript%3Ealert(1)%3C/script%3E',
+          method: 'GET',
+          reason: 'Suspicious keywords and XSS pattern detected in URL.'
+        },
+        {
+          type: 'malicious',
+          icon: 'fa-bug',
+          color: 'danger',
+          title: 'SQL Injection',
+          url: "/login.php?user=admin' OR 1=1--&pass=any",
+          method: 'POST',
+          reason: 'SQL keywords and suspicious parameter values detected.'
+        },
+        {
+          type: 'malicious',
+          icon: 'fa-bug',
+          color: 'danger',
+          title: 'Path Traversal',
+          url: '/download.php?file=../../etc/passwd',
+          method: 'GET',
+          reason: 'Suspicious file path and sensitive file access pattern.'
+        },
+        {
+          type: 'malicious',
+          icon: 'fa-bug',
+          color: 'danger',
+          title: 'Command Injection',
+          url: '/ping.php?host=8.8.8.8;cat /etc/passwd',
+          method: 'GET',
+          reason: 'Command separator and sensitive file access detected.'
+        },
+        {
+          type: 'benign',
+          icon: 'fa-shield-alt',
+          color: 'success',
+          title: 'Example Benign',
+          url: '/profile.php?id=42',
+          method: 'GET',
+          reason: 'Simple parameter, no suspicious content.'
+        }
+      ];
+      let suggestionIndex = 0;
+      function renderSuggestion(idx) {
+        const s = modelSuggestions[idx];
+        let border = s.color === 'success' ? 'border-success' : 'border-danger';
+        let iconColor = s.color === 'success' ? 'text-success' : 'text-danger';
+        document.getElementById('suggestionCarousel').innerHTML = `
+          <div class="p-3 rounded bg-white mb-2 border ${border}" style="min-width:260px;max-width:600px;box-shadow:0 2px 8px #0001;">
+            <div class="fw-bold ${iconColor} mb-1"><i class="fa ${s.icon}"></i> ${s.title}</div>
+            <div style="font-size:0.97rem;">
+              <b>URL:</b> <span style="word-break:break-all;">${s.url}</span><br>
+              <b>Method:</b> ${s.method}<br>
+              <b>Reason:</b> ${s.reason}<br>
+            </div>
+          </div>
+        `;
+      }
+      document.addEventListener('DOMContentLoaded', function() {
+        renderSuggestion(suggestionIndex);
+        document.getElementById('suggestionLeft').onclick = function() {
+          suggestionIndex = (suggestionIndex - 1 + modelSuggestions.length) % modelSuggestions.length;
+          renderSuggestion(suggestionIndex);
+        };
+        document.getElementById('suggestionRight').onclick = function() {
+          suggestionIndex = (suggestionIndex + 1) % modelSuggestions.length;
+          renderSuggestion(suggestionIndex);
+        };
+      });
+      // Make table rows clickable to show modal with details and explanations
+      document.addEventListener('DOMContentLoaded', function() {
+        var table = document.getElementById('predTable');
+        if (table) {
+          table.addEventListener('click', function(e) {
+            let tr = e.target.closest('tr');
+            if (!tr || !tr.classList.contains('table-row-clickable')) return;
+            var cells = tr.getElementsByTagName('td');
+              if (cells.length >= 4) {
+                document.getElementById('modal-url').textContent = cells[0].textContent;
+                document.getElementById('modal-request-body').textContent = cells[1].textContent;
+                document.getElementById('modal-label').innerHTML = cells[2].innerHTML;
+                document.getElementById('modal-reason').textContent = cells[3].textContent;
+                // Find the corresponding prediction object for explanations
+                const rowIndex = tr.rowIndex - 1; // Adjust for header row
+                const pred = (window.lastPredictionsData && window.lastPredictionsData[rowIndex]) || {};
+                document.getElementById('modal-beh-flag').textContent = pred.behavioral_anomaly_flag === 1 || pred.behavioral_anomaly_flag === '1' ? 'Yes' : 'No';
+                document.getElementById('modal-beh-score').textContent = typeof pred.behavior_anomaly_score !== 'undefined' ? pred.behavior_anomaly_score : '-';
+                document.getElementById('modal-beh-anomaly-expl').textContent = pred.behavioral_anomaly_explanation || '-';
+                document.getElementById('modal-svm-flag').textContent = pred.svm_anomaly_flag === 1 || pred.svm_anomaly_flag === '1' ? 'Yes' : 'No';
+                document.getElementById('modal-svm-score').textContent = typeof pred.svm_anomaly_score !== 'undefined' ? pred.svm_anomaly_score : '-';
+                document.getElementById('modal-svm-anomaly-expl').textContent = pred.svm_anomaly_explanation || '-';
+                // Show why the score is what it is (feature contributions)
+                let behWhy = '-';
+                let svmWhy = '-';
+                if (pred.features) {
+                  // Defensive: parse numbers if needed
+                  let f = pred.features;
+                  let reqs = Number(f.requests_per_session) || 0;
+                  let dur = Number(f.session_duration) || 0;
+                  let rapid = Number(f.mean_time_between_reqs) || 0;
+                  let uniq = Number(f.unique_endpoints) || 0;
+                  let ua = Number(f.user_agent_changes) || 0;
+                  let behParts = [];
+                  if (reqs > 3) behParts.push('many requests in session');
+                  if (dur > 60) behParts.push('long session duration');
+                  if (rapid < 2 && reqs > 1) behParts.push('rapid requests');
+                  if (uniq > 2) behParts.push('many unique endpoints');
+                  if (ua > 0) behParts.push('user agent changed');
+                  behWhy = behParts.length ? behParts.join(', ') : 'No unusual behavioral features detected.';
+                  let svmParts = [];
+                  if (reqs > 3) svmParts.push('many requests in session');
+                  if (dur > 60) svmParts.push('long session duration');
+                  if (rapid < 2 && reqs > 1) svmParts.push('rapid requests');
+                  if (uniq > 2) svmParts.push('many unique endpoints');
+                  if (ua > 0) svmParts.push('user agent changed');
+                  svmWhy = svmParts.length ? svmParts.join(', ') : 'No unusual features detected by SVM.';
+                }
+                document.getElementById('modal-beh-why').textContent = behWhy;
+                document.getElementById('modal-svm-why').textContent = svmWhy;
+                document.getElementById('modal-score-help').style.display = 'none';
+                var modal = new bootstrap.Modal(document.getElementById('rowDetailsModal'));
+                modal.show();
+            }
+          });
+        }
+      // Show score help modal content
+      function showScoreHelp(type) {
+        let helpDiv = document.getElementById('modal-score-help');
+        let html = '';
+        if (type === 'behavioral') {
+          html = `<div class="alert alert-info mt-2"><b>Behavioral Anomaly Score</b> is calculated using an IsolationForest model trained on normal session behavior (requests/session, session duration, unique endpoints, etc).<br><br>
+          <b>Score Meaning:</b> Higher values mean the request/session is more unusual compared to normal user activity. A high score (and a "Yes" flag) means the model thinks this session is an outlier.<br><br>
+          <b>Why this score?</b> The model looks at your session's activity pattern and compares it to what it learned as normal. If your session is much different (e.g., too many requests, rapid changes), the score goes up.<br><br>
+          <b>Threshold:</b> If the score is above 0.4, the flag is "Yes" (anomaly detected).</div>`;
+        } else if (type === 'svm') {
+          html = `<div class="alert alert-info mt-2"><b>SVM Anomaly Score</b> is calculated using a OneClassSVM model trained on the same behavioral features.<br><br>
+          <b>Score Meaning:</b> Higher values mean the request/session is more unusual according to the SVM model. A high score (and a "Yes" flag) means the SVM thinks this session is an outlier.<br><br>
+          <b>Why this score?</b> The SVM model finds the "normal" region in feature space. If your session falls outside, the score increases.<br><br>
+          <b>Threshold:</b> If the score is above 0.0, the flag is "Yes" (anomaly detected).</div>`;
+        }
+        helpDiv.innerHTML = html;
+        helpDiv.style.display = 'block';
+        // Scroll modal to help section
+        let modalBody = helpDiv.closest('.modal-body');
+        if (modalBody) modalBody.scrollTop = modalBody.scrollHeight;
+      }
+        // Fetch stats for total, benign, malicious
+        fetch('/stats').then(r => r.json()).then(stats => {
+          document.getElementById('stat-total').textContent = stats.total;
+          document.getElementById('stat-benign').textContent = stats.benign;
+          document.getElementById('stat-malicious').textContent = stats.malicious;
+        });
+        // Feedback with optional text
+        function sendFeedback(type) {
+          if (confirm('Would you like to add a text feedback?')) {
+            let text = prompt('Enter your feedback (optional):');
+            fetch('/feedback', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                url: document.getElementById('modal-url').textContent,
+                request_body: document.getElementById('modal-request-body').textContent,
+                label: document.getElementById('modal-label').textContent,
+                reason: document.getElementById('modal-reason').textContent,
+                feedback: type,
+                text_feedback: text || ''
+              })
+            });
+            alert('Thank you for your feedback!');
+          } else {
+            fetch('/feedback', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                url: document.getElementById('modal-url').textContent,
+                request_body: document.getElementById('modal-request-body').textContent,
+                label: document.getElementById('modal-label').textContent,
+                reason: document.getElementById('modal-reason').textContent,
+                feedback: type,
+                text_feedback: ''
+              })
+            });
+            alert('Thank you for your feedback!');
+          }
+        }
+        document.getElementById('feedbackGood').onclick = function() { sendFeedback('good'); };
+        document.getElementById('feedbackBad').onclick = function() { sendFeedback('bad'); };
+      });
+    </script>
+
+    <!-- Details Modal and Action Buttons -->
+    <!-- Action buttons moved to modal footer -->
+    <div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title" id="detailsModalLabel"><i class="fa fa-info-circle"></i> Prediction Details</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <table class="table table-bordered">
+              <tbody>
+                <tr><th>URL</th><td id="modal-url"></td></tr>
+                <tr><th>Request Body</th><td id="modal-request-body"></td></tr>
+                <tr><th>Prediction</th><td id="modal-label"></td></tr>
+                <tr><th>Reason</th><td id="modal-reason"></td></tr>
+                <tr><th>Behavioral Anomaly Explanation</th><td id="modal-beh-anomaly-expl"></td></tr>
+                <tr><th>SVM Anomaly Explanation</th><td id="modal-svm-anomaly-expl"></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="modal-footer d-flex justify-content-between align-items-center">
+            <div>
+              <button class="btn btn-outline-secondary btn-sm me-2" id="copyDetailsBtn"><i class="fa fa-copy"></i> Copy</button>
+              <button class="btn btn-outline-primary btn-sm me-2" id="replayBtn"><i class="fa fa-redo"></i> Replay</button>
+              <span id="feedbackArea">
+                <button class="btn btn-outline-success btn-sm" id="feedbackGood"><i class="fa fa-thumbs-up"></i></button>
+                <button class="btn btn-outline-danger btn-sm" id="feedbackBad"><i class="fa fa-thumbs-down"></i></button>
+              </span>
+            </div>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
