@@ -61,6 +61,13 @@ def main():
     print(res3)
     time.sleep(1)
 
+    print("\n[3.1] Suspicious payload:")
+    url3 = "/search.php?q=' or 1=1 --"
+    payload3 = "' or 1=1 --"
+    res3 = make_request(url3, payload3, user_agent, session_id)
+    print(res3)
+    time.sleep(1)
+
     # 4. Abnormal session (many endpoints, user agent changes)
     print("\n[4] Abnormal session (many endpoints, user agent changes):")
     for i in range(3):
