@@ -47,6 +47,24 @@ def generate_report():
     report.generate_html_report(html_path)
     return send_from_directory('frontend', 'report.html')
 
+@app.route('/report.html')
+def serve_report_html():
+    import os
+    html_path = os.path.join('frontend', 'report.html')
+    if not os.path.exists(html_path):
+        try:
+            features = {k: v for k, v in (last_predictions[-1]['features'].items() if last_predictions else {})}
+            attacks = sum(1 for r in last_predictions if r['label'] == 'malicious')
+            blocked = sum(1 for r in last_predictions if r.get('blocked'))
+            f1_score = 0.0
+            performance = {}
+            shap_img = None
+            report = ReportGenerator(shap_values=shap_img, features=features, f1_score=f1_score, attacks=attacks, blocked=blocked, performance=performance)
+            report.generate_html_report(html_path)
+        except Exception as e:
+            return f"Error generating report: {e}", 500
+    return send_from_directory('frontend', 'report.html')
+
 # --- ATTACK SIMULATION ENDPOINT ---
 @app.route('/simulate_attack', methods=['GET'])
 def simulate_attack():
@@ -111,6 +129,23 @@ def get_feedback():
     feedback = load_feedback()
     return jsonify(feedback)
 
+# --- DOWNLOAD FEEDBACK ENDPOINT ---
+@app.route('/download_feedback', methods=['GET'])
+def download_feedback():
+    feedback = load_feedback()
+    import csv
+    from flask import Response
+    # Convert feedback to CSV
+    if not feedback:
+        return Response('No feedback available.', mimetype='text/plain')
+    keys = feedback[0].keys() if isinstance(feedback, list) and feedback else []
+    output = []
+    output.append(','.join(keys))
+    for row in feedback:
+        output.append(','.join(str(row[k]) for k in keys))
+    csv_data = '\n'.join(output)
+    return Response(csv_data, mimetype='text/csv', headers={"Content-disposition": "attachment; filename=feedback.csv"})
+
 # --- SESSION VISUALIZATION ENDPOINT ---
 @app.route('/session_timeline', methods=['GET'])
 def session_timeline():
@@ -134,10 +169,9 @@ SESSION_WINDOW = 300  # seconds (5 min window for session activity)
 # --- Burp/ZAP Integration Endpoint Registration ---
 try:
     from integrations.forward_api import integrations_api
-    app.register_blueprint(integrations_api)
+    app.register_blueprint(integrations_api, url_prefix='/integrations')
 except Exception as e:
-    # If integration module is missing, skip registration
-    pass
+    print(f"Burp/ZAP integration import failed: {e}")
 
 # --- Persistent anomaly models trained on synthetic normal data ---
 from sklearn.ensemble import IsolationForest
@@ -298,8 +332,10 @@ def extract_features_from_request(req_json):
 def serve_suggestions():
     return send_from_directory('frontend', 'suggestions.json')
 
-@app.route('/predict', methods=['POST'])
+@app.route('/predict', methods=['POST', 'GET'])
 def predict():
+    if request.method == 'GET':
+        return "Predict endpoint is working. Use POST to send data.", 200
     try:
         if request.is_json:
             req_json = request.get_json(force=True)
@@ -336,132 +372,34 @@ def predict():
                 and not features_dict.get('behavioral_anomaly_flag', 0):
                 warning = True
 
-            if pred_label == 'malicious':
-                if top_features:
-                    reason = f"Malicious: {', '.join(top_features)} detected."
-                else:
-                    reason = "Malicious: suspicious pattern detected."
-                # Log the blocked request
-                logging.info(f"BLOCKED: URL={req_json.get('URL','')} IP={request.remote_addr} Reason={reason}")
-                record = {
-                    'url': req_json.get('URL', ''),
-                    'request_body': req_json.get('request_body', ''),
-                    'label': pred_label,
-                    'reason': reason,
-                    'timestamp': datetime.utcnow().isoformat() + 'Z',
-                    'behavioral_anomaly_flag': features_dict.get('behavioral_anomaly_flag', 0),
-                    'behavior_anomaly_score': features_dict.get('behavior_anomaly_score', 0),
-                    'svm_anomaly_flag': features_dict.get('svm_anomaly_flag', 0),
-                    'svm_anomaly_score': features_dict.get('svm_anomaly_score', 0),
-                    'warning': warning,
-                    'features': features_dict,
-                    'blocked': True
-                }
-                last_predictions.append(record)
-                if len(last_predictions) > MAX_LOG_SIZE:
-                    last_predictions.pop(0)
-                # Simulate blocking by returning 403
-                return jsonify({
-                    'success': False,
-                    'blocked': True,
-                    'prediction': pred_label,
-                    'attack_type': attack_type,
-                    'reason': reason,
-                    'features': features_dict,
-                    'message': 'Request blocked due to malicious activity.'
-                }), 403
-            elif warning:
-                reason = f"Warning: suspicious payload detected but no behavioral anomaly."
-            else:
-                if not top_features:
-                    reason = "Benign: no suspicious features detected."
-                else:
-                    reason = f"Benign: {', '.join(top_features)} present but not enough for attack."
-            record = {
-                'url': req_json.get('URL', ''),
-                'request_body': req_json.get('request_body', ''),
+            reason = ', '.join(top_features) if top_features else 'No suspicious features detected.'
+
+            # Save prediction for logs and reporting
+            pred_record = {
+                'url': url,
+                'request_body': payload,
                 'label': pred_label,
                 'reason': reason,
-                'timestamp': datetime.utcnow().isoformat() + 'Z',
-                'behavioral_anomaly_flag': features_dict.get('behavioral_anomaly_flag', 0),
-                'behavior_anomaly_score': features_dict.get('behavior_anomaly_score', 0),
-                'svm_anomaly_flag': features_dict.get('svm_anomaly_flag', 0),
-                'svm_anomaly_score': features_dict.get('svm_anomaly_score', 0),
-                'warning': warning,
+                'attack_type': attack_type,
                 'features': features_dict,
-                'blocked': False
+                'warning': warning,
+                'behavioral_anomaly_flag': features_dict.get('behavioral_anomaly_flag', 0)
             }
-            last_predictions.append(record)
+            last_predictions.append(pred_record)
             if len(last_predictions) > MAX_LOG_SIZE:
                 last_predictions.pop(0)
+
             return jsonify({
-                'success': True,
-                'blocked': False,
                 'prediction': pred_label,
-                'attack_type': attack_type,
                 'reason': reason,
-                'features': features_dict
+                'attack_type': attack_type,
+                'features': features_dict,
+                'warning': warning
             }), 200
         else:
-            # Handle form POSTs (non-AJAX): fallback to redirect
-            req_json = request.form.to_dict()
-            features_df = extract_features_from_request(req_json)
-            pred_encoded = model.predict(features_df)[0]
-            pred_label = label_encoder.inverse_transform([pred_encoded])[0]
-
-            url = req_json.get('URL', '')
-            payload = req_json.get('request_body', '')
-            _, attack_type = detect_attack_from_strings(url, payload)
-
-
-            record = {
-                'url': req_json.get('URL', ''),
-                'request_body': req_json.get('request_body', ''),
-                'label': pred_label,
-                'reason': reason,
-                'timestamp': datetime.utcnow().isoformat() + 'Z',
-                'behavioral_anomaly_flag': features_dict.get('behavioral_anomaly_flag', 0),
-                'behavior_anomaly_score': features_dict.get('behavior_anomaly_score', 0),
-                'svm_anomaly_flag': features_dict.get('svm_anomaly_flag', 0),
-                'svm_anomaly_score': features_dict.get('svm_anomaly_score', 0),
-                'warning': False,
-                'features': features_dict
-            }
-            last_predictions.append(record)
-            if len(last_predictions) > MAX_LOG_SIZE:
-                last_predictions.pop(0)
-
-            features_dict = features_df.iloc[0].to_dict()
-            top_features = []
-            if features_dict.get('has_suspicious_keywords', 0):
-                top_features.append('suspicious keywords')
-            if features_dict.get('body_has_suspicious', 0):
-                top_features.append('suspicious payload')
-            if features_dict.get('body_special_char_count', 0) > 5:
-                top_features.append('many special characters')
-            if features_dict.get('num_params', 0) > 2:
-                top_features.append('many URL parameters')
-            if features_dict.get('behavioral_anomaly_flag', 0):
-                top_features.append('behavioral anomaly')
-            if pred_label == 'malicious':
-                if top_features:
-                    reason = f"Malicious: {', '.join(top_features)} detected."
-                else:
-                    reason = "Malicious: suspicious pattern detected."
-            else:
-                if not top_features:
-                    reason = "Benign: no suspicious features detected."
-                else:
-                    reason = f"Benign: {', '.join(top_features)} present but not enough for attack."
-            from flask import redirect, url_for
-            features_str = ','.join([f"{k}:{v}" for k, v in features_dict.items()])
-            return redirect(url_for('serve_result', prediction=pred_label, reason=reason, features=features_str, attack_type=attack_type))
-    except ValueError as ve:
-        logging.warning(f"Validation error in /predict: {ve}")
-        return jsonify({'error': str(ve)}), 400
+            return jsonify({'error': 'Request must be JSON'}), 400
     except Exception as e:
-        logging.error(f"Unexpected error in /predict: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/stats', methods=['GET'])
 def stats():
@@ -555,5 +493,10 @@ def health_check():
     return jsonify({'status': 'OK'}), 200
 
 if __name__ == '__main__':
+    try:
+        from flask_cors import CORS
+        CORS(app)
+    except ImportError:
+        print("flask_cors not installed, skipping CORS setup.")
     logging.basicConfig(level=logging.INFO)
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)

@@ -4,3 +4,12 @@ pandas
 scikit-learn
 joblib
 numpy
+matplotlib
+seaborn
+shap
+xgboost
+jinja2
+reportlab
+requests
+faker
+

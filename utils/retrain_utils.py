@@ -3,7 +3,7 @@ Utilities for uploading new labeled data and retraining the model.
 """
 import pandas as pd
 import joblib
-from training_new import train_model
+from utils.train_model import train_model
 
 def upload_labeled_data(file_path):
     # Assume CSV format
