@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Attack Detection Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #2c3e50; }
+        .section { margin-bottom: 30px; }
+        .highlight { color: #e74c3c; font-weight: bold; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Attack Detection System Report</h1>
+    <div class="section">
+        <h2>Model Performance</h2>
+        <p>F1 Score: <span class="highlight">{{ f1_score }}</span></p>
+        <p>Feature Importance:</p>
+        <ul>
+        {% for feature, value in features.items() %}
+            <li>{{ feature }}: {{ value }}</li>
+        {% endfor %}
+        </ul>
+    </div>
+    <div class="section">
+        <h2>Detected Attacks</h2>
+        <p>{{ attacks }}</p>
+    </div>
+    <div class="section">
+        <h2>Blocked Requests</h2>
+        <p>{{ blocked }}</p>
+    </div>
+    <div class="section">
+        <h2>System Performance</h2>
+        <p>{{ performance }}</p>
+    </div>
+    <div class="section">
+        <h2>F1 Score</h2>
+        <img src="{{ f1_img }}" alt="F1 Score" style="max-width:300px;">
+    </div>
+    <div class="section">
+        <h2>Correlation Heatmap</h2>
+        <img src="{{ corr_img }}" alt="Correlation Heatmap" style="max-width:100%;">
+    </div>
+    <div class="section">
+        <h2>Overfitting (Train vs Test Accuracy)</h2>
+        <img src="{{ overfit_img }}" alt="Overfitting Plot" style="max-width:300px;">
+    </div>
+    <div class="section">
+        <h2>SHAP Summary</h2>
+        <img src="{{ shap_values }}" alt="SHAP Summary Plot" style="max-width:100%;">
+    </div>
+</body>
+</html>

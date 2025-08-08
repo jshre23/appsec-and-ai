@@ -163,6 +163,32 @@
               <a href="/" class="btn btn-outline-primary btn-lg px-5"><i class="fa fa-home"></i> Dashboard</a>
               <a href="/manual" class="btn btn-outline-secondary btn-lg px-5"><i class="fa fa-keyboard"></i> Manual Input</a>
             </div>
+            <div class="mt-4">
+              <div class="section-title"><i class="fa fa-comment-dots me-1"></i>Feedback</div>
+              <form id="feedbackForm" class="d-flex flex-column align-items-center">
+                <input type="hidden" name="request_id" value="{{ request_id if request_id else '' }}">
+                <input type="hidden" name="prediction" value="{{ prediction }}">
+                <div class="mb-2">Was this prediction correct?</div>
+                <div class="btn-group mb-3" role="group">
+                  <button type="button" class="btn btn-success" onclick="submitFeedback(true)"><i class="fa fa-check"></i> Yes</button>
+                  <button type="button" class="btn btn-danger" onclick="submitFeedback(false)"><i class="fa fa-times"></i> No</button>
+                </div>
+                <div id="feedbackMsg" class="text-success" style="display:none;">Thank you for your feedback!</div>
+              </form>
+            </div>
+            <script>
+              function submitFeedback(correct) {
+                const request_id = document.querySelector('input[name="request_id"]').value || (Date.now() + Math.random());
+                const prediction = document.querySelector('input[name="prediction"]').value;
+                fetch('/feedback', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ request_id, prediction, correct })
+                }).then(r => {
+                  document.getElementById('feedbackMsg').style.display = 'block';
+                });
+              }
+            </script>
           </div>
         </div>
       </div>

@@ -1,5 +1,12 @@
 # Serve suggestions.json for the homepage suggestions box
 from flask import send_from_directory
+from utils.report_generator import ReportGenerator
+from utils.attack_simulator import AttackSimulator
+from utils.alert_utils import send_email_alert, send_slack_alert
+from utils.feedback_utils import save_feedback, load_feedback
+from utils.session_visualizer import plot_session_timeline, flag_suspicious_sessions
+from utils.retrain_utils import upload_labeled_data, retrain_model
+import os
 import logging
 from flask import Flask, request, jsonify, render_template
 from attack_detection import detect_attack_from_strings
@@ -9,14 +16,128 @@ import joblib
 from datetime import datetime
 
 
+
+# Setup logging for blocked requests
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s %(message)s',
+    handlers=[
+        logging.FileHandler('blocked_requests.log'),
+        logging.StreamHandler()
+    ]
+)
+
 app = Flask(__name__, static_folder='frontend', template_folder='frontend')
+app.config['UPLOAD_FOLDER'] = 'uploads'
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+# Only one /detect-attack endpoint definition
+
+# --- REPORT GENERATION ENDPOINT ---
+@app.route('/generate_report', methods=['GET'])
+def generate_report():
+    # Example: Use last_predictions for report data
+    f1_score = 0.95  # Replace with actual value
+    features = {k: v for k, v in (last_predictions[-1]['features'].items() if last_predictions else {})}
+    attacks = sum(1 for r in last_predictions if r['label'] == 'malicious')
+    blocked = sum(1 for r in last_predictions if r.get('blocked'))
+    performance = 'OK'  # Replace with actual system metrics
+    shap_img = '/static/shap_summary.png' if os.path.exists('static/shap_summary.png') else ''
+    report = ReportGenerator(shap_values=shap_img, features=features, f1_score=f1_score, attacks=attacks, blocked=blocked, performance=performance)
+    html_path = os.path.join('frontend', 'report.html')
+    report.generate_html_report(html_path)
+    return send_from_directory('frontend', 'report.html')
+
+# --- ATTACK SIMULATION ENDPOINT ---
+@app.route('/simulate_attack', methods=['GET'])
+def simulate_attack():
+    sqli = AttackSimulator.simulate_sqli()
+    xss = AttackSimulator.simulate_xss()
+    lfi = AttackSimulator.simulate_lfi()
+    rce = AttackSimulator.simulate_rce()
+    return jsonify({'SQLi': sqli, 'XSS': xss, 'LFI': lfi, 'RCE': rce})
+
+# --- ALERTING ENDPOINT ---
+@app.route('/send_alert', methods=['POST'])
+def send_alert():
+    data = request.json
+    alert_type = data.get('type')
+    message = data.get('message')
+    if alert_type == 'email':
+        ok = send_email_alert(
+            subject='Malicious Request Detected',
+            body=message,
+            to_email=data['to_email'],
+            from_email=data['from_email'],
+            smtp_server=data['smtp_server'],
+            smtp_port=data['smtp_port'],
+            smtp_user=data['smtp_user'],
+            smtp_pass=data['smtp_pass']
+        )
+        return jsonify({'success': ok})
+    elif alert_type == 'slack':
+        ok = send_slack_alert(data['webhook_url'], message)
+        return jsonify({'success': ok})
+    return jsonify({'error': 'Invalid alert type'}), 400
+
+# --- UPLOAD & RETRAIN ENDPOINT ---
+@app.route('/upload_labeled_data', methods=['POST'])
+def upload_labeled_data_api():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file uploaded'}), 400
+    file = request.files['file']
+    path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+    file.save(path)
+    df = upload_labeled_data(path)
+    return jsonify({'rows': len(df)})
+
+@app.route('/retrain_model', methods=['POST'])
+def retrain_model_api():
+    data = request.json
+    data_path = data.get('data_path')
+    if not data_path or not os.path.exists(data_path):
+        return jsonify({'error': 'Invalid data path'}), 400
+    f1 = retrain_model(data_path)
+    return jsonify({'f1_score': f1})
+
+# --- USER FEEDBACK ENDPOINT ---
+@app.route('/feedback', methods=['POST'])
+def feedback():
+    data = request.json
+    save_feedback(data['request_id'], data['prediction'], data['correct'])
+    return jsonify({'success': True})
+
+@app.route('/feedback', methods=['GET'])
+def get_feedback():
+    feedback = load_feedback()
+    return jsonify(feedback)
+
+# --- SESSION VISUALIZATION ENDPOINT ---
+@app.route('/session_timeline', methods=['GET'])
+def session_timeline():
+    # Example: Use session_store for session data
+    session_data = []
+    for sid, sess in session_store.items():
+        for req in sess['requests']:
+            session_data.append({'session_id': sid, 'timestamp': req['timestamp'], 'activity': req['url']})
+    img_path = plot_session_timeline(session_data)
+    suspicious = flag_suspicious_sessions(session_data)
+    return jsonify({'timeline_image': img_path, 'suspicious_sessions': suspicious})
 
 import uuid
+
 
 
 # In-memory session store for behavioral analytics
 session_store = {}
 SESSION_WINDOW = 300  # seconds (5 min window for session activity)
+
+# --- Burp/ZAP Integration Endpoint Registration ---
+try:
+    from integrations.forward_api import integrations_api
+    app.register_blueprint(integrations_api)
+except Exception as e:
+    # If integration module is missing, skip registration
+    pass
 
 # --- Persistent anomaly models trained on synthetic normal data ---
 from sklearn.ensemble import IsolationForest
@@ -220,6 +341,35 @@ def predict():
                     reason = f"Malicious: {', '.join(top_features)} detected."
                 else:
                     reason = "Malicious: suspicious pattern detected."
+                # Log the blocked request
+                logging.info(f"BLOCKED: URL={req_json.get('URL','')} IP={request.remote_addr} Reason={reason}")
+                record = {
+                    'url': req_json.get('URL', ''),
+                    'request_body': req_json.get('request_body', ''),
+                    'label': pred_label,
+                    'reason': reason,
+                    'timestamp': datetime.utcnow().isoformat() + 'Z',
+                    'behavioral_anomaly_flag': features_dict.get('behavioral_anomaly_flag', 0),
+                    'behavior_anomaly_score': features_dict.get('behavior_anomaly_score', 0),
+                    'svm_anomaly_flag': features_dict.get('svm_anomaly_flag', 0),
+                    'svm_anomaly_score': features_dict.get('svm_anomaly_score', 0),
+                    'warning': warning,
+                    'features': features_dict,
+                    'blocked': True
+                }
+                last_predictions.append(record)
+                if len(last_predictions) > MAX_LOG_SIZE:
+                    last_predictions.pop(0)
+                # Simulate blocking by returning 403
+                return jsonify({
+                    'success': False,
+                    'blocked': True,
+                    'prediction': pred_label,
+                    'attack_type': attack_type,
+                    'reason': reason,
+                    'features': features_dict,
+                    'message': 'Request blocked due to malicious activity.'
+                }), 403
             elif warning:
                 reason = f"Warning: suspicious payload detected but no behavioral anomaly."
             else:
@@ -227,7 +377,6 @@ def predict():
                     reason = "Benign: no suspicious features detected."
                 else:
                     reason = f"Benign: {', '.join(top_features)} present but not enough for attack."
-
             record = {
                 'url': req_json.get('URL', ''),
                 'request_body': req_json.get('request_body', ''),
@@ -239,14 +388,15 @@ def predict():
                 'svm_anomaly_flag': features_dict.get('svm_anomaly_flag', 0),
                 'svm_anomaly_score': features_dict.get('svm_anomaly_score', 0),
                 'warning': warning,
-                'features': features_dict
+                'features': features_dict,
+                'blocked': False
             }
             last_predictions.append(record)
             if len(last_predictions) > MAX_LOG_SIZE:
                 last_predictions.pop(0)
-
             return jsonify({
                 'success': True,
+                'blocked': False,
                 'prediction': pred_label,
                 'attack_type': attack_type,
                 'reason': reason,

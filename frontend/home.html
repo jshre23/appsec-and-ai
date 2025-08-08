@@ -16,26 +16,26 @@
       .table td.sticky-col, .table th.sticky-col {
         position: sticky;
         left: 0;
-        background: #fffbe7;
+        background: #f4f6fa;
         z-index: 4;
-        box-shadow: 2px 0 6px -2px #fda08522;
+        box-shadow: 2px 0 6px -2px #b0b8c1;
       }
       @media (max-width: 900px) {
         .svm-col, th.svm-col { display: none !important; }
         .table td, .table th { font-size: 0.87rem; padding: 0.18rem 0.18rem; }
       }
       body {
-        background: linear-gradient(120deg, #f6d365 0%, #fda085 100%);
+        background: linear-gradient(120deg, #e3e6e8 0%, #b0b8c1 100%);
         min-height: 100vh;
         font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
         position: relative;
       }
       .benign-icon {
-        color: #28a745;
+        color: #2ecc71;
         filter: drop-shadow(0 0 2px #b2f7c2);
       }
       .malicious-icon {
-        color: #dc3545;
+        color: #e74c3c;
         filter: drop-shadow(0 0 2px #f7b2b2);
       }
       .table-row-clickable {
@@ -43,8 +43,8 @@
         transition: background 0.2s, box-shadow 0.2s;
       }
       .table-row-clickable:hover {
-        background: #f6d36522 !important;
-        box-shadow: 0 2px 12px #fda08533;
+        background: #e3e6e822 !important;
+        box-shadow: 0 2px 12px #b0b8c133;
         z-index: 2;
       }
       .card {
@@ -53,10 +53,10 @@
       }
       .card:hover {
         transform: translateY(-4px) scale(1.03);
-        box-shadow: 0 6px 24px #fda08555;
+        box-shadow: 0 6px 24px #b0b8c155;
       }
       .table {
-        background: #fff8f0;
+        background: #f4f6fa;
         border-radius: 1rem;
         overflow: hidden;
         box-shadow: 0 2px 18px #fda08533;
@@ -183,20 +183,35 @@
     </style>
 </head>
 <body>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+    <div class="container-fluid">
+      <a class="navbar-brand fw-bold" href="/">AI Web Security</a>
+      <div class="collapse navbar-collapse">
+        <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link" href="/report.html"><i class="fa fa-chart-bar"></i> Reports</a></li>
+          <li class="nav-item"><a class="nav-link" href="/alert_settings.html"><i class="fa fa-bell"></i> Alert Settings</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
     <div class="container py-4">
     <!-- Animated header bar -->
     <div class="mb-4" style="height: 6px; background: linear-gradient(90deg, #f6d365 0%, #fda085 100%); border-radius: 2px;"></div>
     <footer>
-      <span>🚀 AI Web Security Dashboard &copy; 2025 | <i class="fa fa-heart text-danger"></i> Modern UI</span>
+      <span>�️ AI Web Security Dashboard &copy; 2025 | <i class="fa fa-shield-alt text-primary"></i> Clean Modern UI</span>
     </footer>
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="fw-bold text-primary"><i class="fa fa-shield-alt me-2"></i>Appsec-RevProx-mini</h2>
+        <h2 class="fw-bold text-dark"><i class="fa fa-shield-alt me-2"></i>Appsec-RevProx-mini</h2>
         <nav>
           <a href="/manual" class="btn btn-outline-primary btn-sm me-2"><i class="fa fa-keyboard"></i> Manual Entry</a>
-          <a href="/dvwa/" class="btn btn-outline-secondary btn-sm me-2"><i class="fa fa-flask"></i> DVWA</a>
           <a href="/logs" class="btn btn-outline-info btn-sm me-2"><i class="fa fa-file-alt"></i> Logs</a>
           <a href="/predict" class="btn btn-outline-success btn-sm"><i class="fa fa-magic"></i> Simulate Prediction</a>
         </nav>
+      </div>
+      <!-- Block status indicator -->
+      <div class="mb-3">
+        <span id="blockStatus" class="badge bg-secondary" style="font-size:1.1em;">Block Mode: <span id="blockMode">Simulated</span></span>
+        <span class="text-muted ms-2" style="font-size:0.97em;">(Malicious requests are not really blocked, only simulated. Integrate with Burp/ZAP for real blocking.)</span>
       </div>
       <!-- Suggestions Box -->
       <div class="row mb-4">

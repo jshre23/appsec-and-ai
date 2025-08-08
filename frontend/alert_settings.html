@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alert Settings - AI Web Security</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      body { background: #f4f6fa; font-family: 'Segoe UI', Arial, sans-serif; }
+      .container { margin-top: 2rem; max-width: 600px; }
+      .card { border-radius: 1.2rem; box-shadow: 0 4px 24px #b0b8c133; }
+      .form-label { font-weight: 600; color: #fda085; }
+      .btn-primary { background: #fda085; border: none; border-radius: 1.2em; font-weight: 600; }
+      .btn-primary:hover { background: #f6d365; color: #fff; }
+    </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card p-4">
+      <h2 class="mb-4">Alert Settings</h2>
+      <form id="alertForm">
+        <div class="mb-3">
+          <label class="form-label">Alert Type</label>
+          <select class="form-select" name="type" id="alertType">
+            <option value="email">Email</option>
+            <option value="slack">Slack</option>
+          </select>
+        </div>
+        <div id="emailFields">
+          <div class="mb-3">
+            <label class="form-label">To Email</label>
+            <input type="email" class="form-control" name="to_email" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">From Email</label>
+            <input type="email" class="form-control" name="from_email" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">SMTP Server</label>
+            <input type="text" class="form-control" name="smtp_server" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">SMTP Port</label>
+            <input type="number" class="form-control" name="smtp_port" value="587" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">SMTP Username</label>
+            <input type="text" class="form-control" name="smtp_user" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">SMTP Password</label>
+            <input type="password" class="form-control" name="smtp_pass" required>
+          </div>
+        </div>
+        <div id="slackFields" style="display:none;">
+          <div class="mb-3">
+            <label class="form-label">Slack Webhook URL</label>
+            <input type="text" class="form-control" name="webhook_url">
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Test Message</label>
+          <input type="text" class="form-control" name="message" value="Test alert from AI Web Security!" required>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="sendAlert()">Send Test Alert</button>
+        <div id="alertMsg" class="text-success mt-3" style="display:none;">Alert sent!</div>
+      </form>
+    </div>
+  </div>
+  <script>
+    document.getElementById('alertType').addEventListener('change', function() {
+      if (this.value === 'email') {
+        document.getElementById('emailFields').style.display = '';
+        document.getElementById('slackFields').style.display = 'none';
+      } else {
+        document.getElementById('emailFields').style.display = 'none';
+        document.getElementById('slackFields').style.display = '';
+      }
+    });
+    function sendAlert() {
+      const form = document.getElementById('alertForm');
+      const data = Object.fromEntries(new FormData(form).entries());
+      fetch('/send_alert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      }).then(r => r.json()).then(resp => {
+        document.getElementById('alertMsg').style.display = resp.success ? 'block' : 'none';
+        if (!resp.success) alert('Alert failed. Check your settings.');
+      });
+    }
+  </script>
+</body>
+</html>

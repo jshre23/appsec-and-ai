@@ -1,0 +1,6 @@
+# requirements.txt for Flask backend
+Flask
+pandas
+scikit-learn
+joblib
+numpy
