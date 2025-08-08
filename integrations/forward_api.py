@@ -2,7 +2,7 @@
 # This endpoint allows Burp Suite/ZAP or any external tool to forward HTTP requests for analysis.
 
 from flask import request, jsonify
-from .middleware10 import extract_features_from_request, model, label_encoder, detect_attack_from_strings, last_predictions, MAX_LOG_SIZE
+from integrations.middleware10 import extract_features_from_request, model, label_encoder, detect_attack_from_strings, last_predictions, MAX_LOG_SIZE
 from datetime import datetime
 
 from flask import Blueprint
