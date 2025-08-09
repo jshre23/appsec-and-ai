@@ -329,6 +329,8 @@
           </div>
         </div>
       </div>
+    <!-- Try Prediction Endpoint box removed as requested -->
+    <!-- Try Prediction Endpoint box removed as requested -->
     </div>
     <style>
         .table th, .table td { vertical-align: middle; }
@@ -583,11 +585,13 @@
         if (modalBody) modalBody.scrollTop = modalBody.scrollHeight;
       }
         // Fetch stats for total, benign, malicious
-        fetch('/stats').then(r => r.json()).then(stats => {
-          document.getElementById('stat-total').textContent = stats.total;
-          document.getElementById('stat-benign').textContent = stats.benign;
-          document.getElementById('stat-malicious').textContent = stats.malicious;
-        });
+        fetch('/stats')
+          .then(r => r.json())
+          .then(stats => {
+            document.getElementById('stat-total').textContent = stats.total;
+            document.getElementById('stat-benign').textContent = stats.benign;
+            document.getElementById('stat-malicious').textContent = stats.malicious;
+          });
         // Feedback with optional text
         function sendFeedback(type) {
           if (confirm('Would you like to add a text feedback?')) {
@@ -624,6 +628,88 @@
         document.getElementById('feedbackGood').onclick = function() { sendFeedback('good'); };
         document.getElementById('feedbackBad').onclick = function() { sendFeedback('bad'); };
       });
+      // Predict form: auto-fill with example values and send all required fields
+const requiredFeatures = [
+  'URL', 'request_body', 'User-Agent', 'Method', 'num_params', 'session_duration', 'user_agent_length',
+  'url_length', 'svm_anomaly_flag', 'body_special_char_count', 'svm_anomaly_score', 'url_domain',
+  'param_entropy', 'num_param_names', 'user_agent_changes', 'body_has_suspicious', 'session_duration_z',
+  'has_suspicious_keywords', 'has_login', 'unique_endpoints', 'behavioral_anomaly_flag', 'requests_per_session',
+  'content_type_length', 'mean_time_between_reqs', 'body_length', 'session_duration_outlier', 'behavior_anomaly_score',
+  'content-type', 'host' // <-- Add missing features here
+];
+const exampleValues = {
+  'URL': '/login.php?user=admin',
+  'request_body': "username=admin&password=1234",
+  'User-Agent': 'Mozilla/5.0',
+  'Method': 'POST',
+  'num_params': 2,
+  'session_duration': 30,
+  'user_agent_length': 12,
+  'url_length': 24,
+  'svm_anomaly_flag': 0,
+  'body_special_char_count': 1,
+  'svm_anomaly_score': 0.02,
+  'url_domain': 'example.com',
+  'param_entropy': 1.2,
+  'num_param_names': 2,
+  'user_agent_changes': 0,
+  'body_has_suspicious': 0,
+  'session_duration_z': 0.1,
+  'has_suspicious_keywords': 0,
+  'has_login': 1,
+  'unique_endpoints': 1,
+  'behavioral_anomaly_flag': 0,
+  'requests_per_session': 1,
+  'content_type_length': 9,
+  'mean_time_between_reqs': 10,
+  'body_length': 20,
+  'session_duration_outlier': 0,
+  'behavior_anomaly_score': 0.01,
+  'content-type': 'application/x-www-form-urlencoded', // <-- Example value
+  'host': 'localhost' // <-- Example value
+};
+function autofillPredictForm() {
+  const form = document.getElementById('predictForm');
+  if (!form) return;
+  Object.keys(exampleValues).forEach(key => {
+    let input = form.querySelector(`[name='${key}']`);
+    if (!input) {
+      input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      form.appendChild(input);
+    }
+    input.value = exampleValues[key];
+  });
+}
+document.addEventListener('DOMContentLoaded', autofillPredictForm);
+document.getElementById('predictForm').onsubmit = function(e) {
+  e.preventDefault();
+  const form = e.target;
+  const data = {};
+  // Use visible input values if present, else example values
+  requiredFeatures.forEach(key => {
+    const input = form.querySelector(`[name='${key}']`);
+    if (input && (input.type !== 'hidden')) {
+      data[key] = input.value;
+    } else {
+      data[key] = input ? input.value : exampleValues[key];
+    }
+  });
+  fetch('/predict', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  .then(res => res.json())
+  .then(resp => {
+    document.getElementById('predictResult').innerHTML =
+      '<b>Prediction:</b> ' + (resp.prediction || resp.error || 'Error') + '<br>' +
+      '<b>Reason:</b> ' + (resp.reason || '-') + '<br>' +
+      '<b>Attack Type:</b> ' + (resp.attack_type || '-') + '<br>';
+    updatePredictions(); // Immediately refresh predictions table
+  });
+};
     </script>
 
     <!-- Details Modal and Action Buttons -->

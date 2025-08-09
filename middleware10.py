@@ -9,7 +9,9 @@ from utils.retrain_utils import upload_labeled_data, retrain_model
 import os
 import logging
 from flask import Flask, request, jsonify, render_template
-from attack_detection import detect_attack_from_strings
+from integrations.shared_context import (
+    extract_features_from_request, model, label_encoder, detect_attack_from_strings, last_predictions, MAX_LOG_SIZE
+)
 import pandas as pd
 from urllib.parse import urlparse, parse_qs
 import joblib
@@ -33,41 +35,37 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 # Only one /detect-attack endpoint definition
 
 # --- REPORT GENERATION ENDPOINT ---
-@app.route('/generate_report', methods=['GET'])
+@app.route('/generate_report', methods=['GET', 'POST'])
 def generate_report():
-    # Example: Use last_predictions for report data
-    f1_score = 0.95  # Replace with actual value
-    features = {k: v for k, v in (last_predictions[-1]['features'].items() if last_predictions else {})}
-    attacks = sum(1 for r in last_predictions if r['label'] == 'malicious')
-    blocked = sum(1 for r in last_predictions if r.get('blocked'))
-    performance = 'OK'  # Replace with actual system metrics
-    shap_img = '/static/shap_summary.png' if os.path.exists('static/shap_summary.png') else ''
-    report = ReportGenerator(shap_values=shap_img, features=features, f1_score=f1_score, attacks=attacks, blocked=blocked, performance=performance)
-    html_path = os.path.join('frontend', 'report.html')
-    report.generate_html_report(html_path)
-    return send_from_directory('frontend', 'report.html')
+    if request.method == 'GET':
+        return jsonify({'info': 'Report generation endpoint. Use POST to regenerate.'})
+    try:
+        f1_score = 0.95  # Replace with actual value
+        features = {k: v for k, v in (last_predictions[-1]['features'].items() if last_predictions else {})}
+        attacks = sum(1 for r in last_predictions if r['label'] == 'malicious')
+        blocked = sum(1 for r in last_predictions if r.get('blocked'))
+        performance = 'OK'  # Replace with actual system metrics
+        shap_img = '/static/shap_summary.png' if os.path.exists('static/shap_summary.png') else ''
+        report = ReportGenerator(shap_values=shap_img, features=features, f1_score=f1_score, attacks=attacks, blocked=blocked, performance=performance)
+        html_path = os.path.join('frontend', 'report.html')
+        report.generate_html_report(html_path)
+        return jsonify({'success': True, 'message': 'Report generated successfully.'}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Error generating report: {e}'}), 500
 
-@app.route('/report.html')
+@app.route('/report.html', methods=['GET'])
 def serve_report_html():
     import os
     html_path = os.path.join('frontend', 'report.html')
     if not os.path.exists(html_path):
-        try:
-            features = {k: v for k, v in (last_predictions[-1]['features'].items() if last_predictions else {})}
-            attacks = sum(1 for r in last_predictions if r['label'] == 'malicious')
-            blocked = sum(1 for r in last_predictions if r.get('blocked'))
-            f1_score = 0.0
-            performance = {}
-            shap_img = None
-            report = ReportGenerator(shap_values=shap_img, features=features, f1_score=f1_score, attacks=attacks, blocked=blocked, performance=performance)
-            report.generate_html_report(html_path)
-        except Exception as e:
-            return f"Error generating report: {e}", 500
+        return jsonify({'success': False, 'error': 'Report file not found. Please generate the report first.'}), 404
     return send_from_directory('frontend', 'report.html')
 
 # --- ATTACK SIMULATION ENDPOINT ---
-@app.route('/simulate_attack', methods=['GET'])
+@app.route('/simulate_attack', methods=['GET', 'POST'])
 def simulate_attack():
+    if request.method == 'GET':
+        return jsonify({'info': 'Simulate attack endpoint. Use POST to trigger simulation.'})
     sqli = AttackSimulator.simulate_sqli()
     xss = AttackSimulator.simulate_xss()
     lfi = AttackSimulator.simulate_lfi()
@@ -75,27 +73,35 @@ def simulate_attack():
     return jsonify({'SQLi': sqli, 'XSS': xss, 'LFI': lfi, 'RCE': rce})
 
 # --- ALERTING ENDPOINT ---
-@app.route('/send_alert', methods=['POST'])
+@app.route('/send_alert', methods=['POST', 'GET'])
 def send_alert():
-    data = request.json
-    alert_type = data.get('type')
-    message = data.get('message')
-    if alert_type == 'email':
-        ok = send_email_alert(
-            subject='Malicious Request Detected',
-            body=message,
-            to_email=data['to_email'],
-            from_email=data['from_email'],
-            smtp_server=data['smtp_server'],
-            smtp_port=data['smtp_port'],
-            smtp_user=data['smtp_user'],
-            smtp_pass=data['smtp_pass']
-        )
-        return jsonify({'success': ok})
-    elif alert_type == 'slack':
-        ok = send_slack_alert(data['webhook_url'], message)
-        return jsonify({'success': ok})
-    return jsonify({'error': 'Invalid alert type'}), 400
+    if request.method == 'GET':
+        return jsonify({'info': 'Send a POST request with alert details to trigger an alert.'})
+    try:
+        data = request.json
+        alert_type = data.get('type')
+        message = data.get('message')
+        if alert_type == 'email':
+            ok = send_email_alert(
+                subject='Malicious Request Detected',
+                body=message,
+                to_email=data.get('to_email'),
+                from_email=data.get('from_email'),
+                smtp_server=data.get('smtp_server'),
+                smtp_port=data.get('smtp_port'),
+                smtp_user=data.get('smtp_user'),
+                smtp_pass=data.get('smtp_pass')
+            )
+            return jsonify({'success': ok, 'message': 'Email alert sent.' if ok else 'Email alert failed.'})
+        elif alert_type == 'slack':
+            ok = send_slack_alert(data.get('webhook_url'), message)
+            return jsonify({'success': ok, 'message': 'Slack alert sent.' if ok else 'Slack alert failed.'})
+        return jsonify({'success': False, 'error': 'Invalid alert type'}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+@app.route('/alert_settings.html')
+def alert_settings_page():
+    return send_from_directory('frontend', 'alert_settings.html')
 
 # --- UPLOAD & RETRAIN ENDPOINT ---
 @app.route('/upload_labeled_data', methods=['POST'])
@@ -118,10 +124,25 @@ def retrain_model_api():
     return jsonify({'f1_score': f1})
 
 # --- USER FEEDBACK ENDPOINT ---
-@app.route('/feedback', methods=['POST'])
+@app.route('/feedback', methods=['POST', 'GET'])
 def feedback():
+    if request.method == 'GET':
+        feedback = load_feedback()
+        return jsonify({'success': True, 'feedback': feedback})
     data = request.json
-    save_feedback(data['request_id'], data['prediction'], data['correct'])
+    request_id = data.get('request_id')
+    prediction = data.get('prediction')
+    correct = data.get('correct')
+    feedback_type = data.get('feedback')
+    text_feedback = data.get('text_feedback')
+    feedback_record = {
+        'request_id': request_id,
+        'prediction': prediction,
+        'correct': correct,
+        'feedback': feedback_type,
+        'text_feedback': text_feedback
+    }
+    save_feedback(**feedback_record)
     return jsonify({'success': True})
 
 @app.route('/feedback', methods=['GET'])
@@ -142,7 +163,7 @@ def download_feedback():
     output = []
     output.append(','.join(keys))
     for row in feedback:
-        output.append(','.join(str(row[k]) for k in keys))
+        output.append(','.join(str(row.get(k, '')) for k in keys))
     csv_data = '\n'.join(output)
     return Response(csv_data, mimetype='text/csv', headers={"Content-disposition": "attachment; filename=feedback.csv"})
 
@@ -201,132 +222,8 @@ def detect_attack_api():
     label, attack_type = detect_attack_from_strings(url, payload)
     return jsonify({'label': label, 'attack_type': attack_type}), 200
 
-model = joblib.load('xgb_model.pkl')
-label_encoder = joblib.load('label_encoder.pkl')
 MAX_LOG_SIZE = 50
 last_predictions = []
-
-def extract_features_from_request(req_json):
-    required_fields = ['Method', 'User-Agent', 'host', 'content-type', 'URL', 'request_body']
-    missing_fields = [key for key in required_fields if key not in req_json]
-    if missing_fields:
-        raise ValueError(f"Missing required JSON fields: {missing_fields}")
-
-    import numpy as np
-    from datetime import datetime
-    from sklearn.ensemble import IsolationForest
-    df = pd.DataFrame([req_json])
-    # ...existing code for basic features...
-    df['url_length'] = df['URL'].apply(lambda x: len(str(x)))
-    df['num_params'] = df['URL'].apply(lambda x: str(x).count('?') + str(x).count('&'))
-    df['has_login'] = df['URL'].str.contains('login', case=False, na=False).astype(int)
-    df['user_agent_length'] = df['User-Agent'].apply(lambda x: len(str(x)))
-    df['content_type_length'] = df['content-type'].apply(lambda x: len(str(x)))
-    SUSPICIOUS_KEYWORDS = [
-        'select', 'union', 'insert', 'drop', 'script', 'alert', 'sleep',
-        'gopher', 'file', 'meta-data', 'passwd', 'iframe', 'svg', 'onerror', 'onload', 'fetch'
-    ]
-    df['has_suspicious_keywords'] = df['URL'].apply(
-        lambda url: int(any(kw in str(url).lower() for kw in SUSPICIOUS_KEYWORDS)))
-    df['body_length'] = df['request_body'].apply(lambda x: len(str(x)))
-    df['body_has_suspicious'] = df['request_body'].apply(
-        lambda x: int(any(kw in str(x).lower() for kw in SUSPICIOUS_KEYWORDS)))
-    def param_entropy(url):
-        try:
-            params = parse_qs(urlparse(url).query)
-            if not params:
-                return 0
-            all_keys = ''.join(params.keys())
-            return len(set(all_keys)) / (len(all_keys) + 1e-5)
-        except:
-            return 0
-    df['param_entropy'] = df['URL'].apply(param_entropy)
-    def num_param_names(url):
-        try:
-            params = parse_qs(urlparse(url).query)
-            return len(params.keys())
-        except:
-            return 0
-    df['num_param_names'] = df['URL'].apply(num_param_names)
-    def body_special_char_count(body):
-        special_chars = ['"', '\'', ';', '{', '}', '[', ']', '(', ')', '/', '\\', '@', '$', '%', '^', '&', '*', '=', '+', '|', '`', '~', ':']
-        return sum(str(body).count(c) for c in special_chars)
-    df['body_special_char_count'] = df['request_body'].apply(body_special_char_count)
-    def extract_domain(url):
-        try:
-            return urlparse(url).netloc
-        except:
-            return 'missing'
-    df['url_domain'] = df['URL'].apply(extract_domain)
-
-    # --- Behavioral features: session tracking ---
-    # Use session_id if provided, else generate one per user-agent+host
-    now = datetime.utcnow()
-    session_id = req_json.get('session_id')
-    if not session_id:
-        # Use a hash of user-agent+host as pseudo-session
-        session_id = f"sess_{hash(req_json.get('User-Agent', '')) % 10000}_{hash(req_json.get('host', '')) % 10000}"
-    # Clean up old sessions
-    expired = [sid for sid, sess in session_store.items() if (now - sess['last_seen']).total_seconds() > SESSION_WINDOW]
-    for sid in expired:
-        del session_store[sid]
-    # Update session store
-    sess = session_store.get(session_id, {'requests': [], 'user_agents': set(), 'endpoints': set(), 'first_seen': now, 'last_seen': now})
-    sess['requests'].append({'timestamp': now, 'url': req_json.get('URL', ''), 'user_agent': req_json.get('User-Agent', '')})
-    sess['user_agents'].add(req_json.get('User-Agent', ''))
-    try:
-        parsed_url = urlparse(req_json.get('URL', ''))
-        endpoint = parsed_url.path
-    except Exception:
-        endpoint = req_json.get('URL', '')
-    sess['endpoints'].add(endpoint)
-    sess['last_seen'] = now
-    session_store[session_id] = sess
-    # Compute behavioral features over session window
-    reqs = [r for r in sess['requests'] if (now - r['timestamp']).total_seconds() <= SESSION_WINDOW]
-    timestamps = [r['timestamp'] for r in reqs]
-    endpoints = [r['url'] for r in reqs]
-    user_agents = [r['user_agent'] for r in reqs]
-    df['requests_per_session'] = len(reqs)
-    if len(timestamps) > 1:
-        df['session_duration'] = (max(timestamps) - min(timestamps)).total_seconds()
-        df['mean_time_between_reqs'] = np.mean([ (t2-t1).total_seconds() for t1, t2 in zip(sorted(timestamps)[:-1], sorted(timestamps)[1:]) ])
-    else:
-        df['session_duration'] = 0
-        df['mean_time_between_reqs'] = 0
-    df['unique_endpoints'] = len(set(endpoints))
-    df['user_agent_changes'] = len(set(user_agents))
-    # For z-score and outlier, use typical values from training
-    mean_sess = 10
-    std_sess = 10
-    df['session_duration_z'] = (df['session_duration'] - mean_sess) / (std_sess + 1e-6)
-    df['session_duration_outlier'] = (abs(df['session_duration_z']) > 2).astype(int)
-    behavioral_cols = ['requests_per_session', 'session_duration', 'mean_time_between_reqs', 'unique_endpoints', 'user_agent_changes']
-    try:
-        df['behavior_anomaly_score'] = -iso_model.decision_function(df[behavioral_cols].fillna(0))
-        df['behavioral_anomaly_flag'] = (df['behavior_anomaly_score'] > 0.4).astype(int)
-    except Exception:
-        df['behavior_anomaly_score'] = 0.0
-        df['behavioral_anomaly_flag'] = 0
-    # --- SVM anomaly features (persistent model) ---
-    if 'svm_anomaly_score' not in df.columns or 'svm_anomaly_flag' not in df.columns:
-        try:
-            df['svm_anomaly_score'] = -svm_model.decision_function(df[behavioral_cols].fillna(0))
-            df['svm_anomaly_flag'] = (df['svm_anomaly_score'] > 0.0).astype(int)
-        except Exception:
-            df['svm_anomaly_score'] = 0.0
-            df['svm_anomaly_flag'] = 0
-    features = [
-        'Method', 'User-Agent', 'host', 'content-type', 'url_domain',
-        'url_length', 'num_params', 'has_login', 'user_agent_length', 'content_type_length',
-        'has_suspicious_keywords', 'body_length', 'body_has_suspicious', 'param_entropy',
-        'num_param_names', 'body_special_char_count',
-        'requests_per_session', 'session_duration', 'mean_time_between_reqs',
-        'unique_endpoints', 'user_agent_changes', 'session_duration_z', 'session_duration_outlier',
-        'behavior_anomaly_score', 'behavioral_anomaly_flag',
-        'svm_anomaly_score', 'svm_anomaly_flag'
-    ]
-    return df[features]
 
 @app.route('/suggestions.json')
 def serve_suggestions():
@@ -335,25 +232,26 @@ def serve_suggestions():
 @app.route('/predict', methods=['POST', 'GET'])
 def predict():
     if request.method == 'GET':
-        return "Predict endpoint is working. Use POST to send data.", 200
+        return jsonify({'info': 'Prediction endpoint. Use POST to send data.'})
     try:
         if request.is_json:
             req_json = request.get_json(force=True)
             if not req_json:
                 return jsonify({'error': 'Invalid or missing JSON in request'}), 400
-
             features_df = extract_features_from_request(req_json)
             pred_encoded = model.predict(features_df)[0]
             pred_label = label_encoder.inverse_transform([pred_encoded])[0]
-
-            # Use shared attack detection logic for attack type
             url = req_json.get('URL', '')
             payload = req_json.get('request_body', '')
             _, attack_type = detect_attack_from_strings(url, payload)
-
+            # Consistency logic: if model says malicious but attack_type is benign, set attack_type to 'unknown' and add explanation
+            explanation = ''
+            if pred_label == 'malicious' and attack_type == 'benign':
+                attack_type = 'unknown'
+                explanation = 'Model flagged this as malicious based on features, but no known attack pattern was detected.'
+            elif pred_label == 'benign' and attack_type != 'benign':
+                explanation = 'Known attack pattern detected, but model did not flag as malicious.'
             features_dict = features_df.iloc[0].to_dict()
-
-            # Compose a meaningful reason and warning state
             top_features = []
             warning = False
             if features_dict.get('has_suspicious_keywords', 0):
@@ -366,15 +264,10 @@ def predict():
                 top_features.append('many URL parameters')
             if features_dict.get('behavioral_anomaly_flag', 0):
                 top_features.append('behavioral anomaly')
-
-            # Warning: suspicious payload but no behavioral anomaly
             if (features_dict.get('has_suspicious_keywords', 0) or features_dict.get('body_has_suspicious', 0)) \
                 and not features_dict.get('behavioral_anomaly_flag', 0):
                 warning = True
-
             reason = ', '.join(top_features) if top_features else 'No suspicious features detected.'
-
-            # Save prediction for logs and reporting
             pred_record = {
                 'url': url,
                 'request_body': payload,
@@ -388,13 +281,14 @@ def predict():
             last_predictions.append(pred_record)
             if len(last_predictions) > MAX_LOG_SIZE:
                 last_predictions.pop(0)
-
             return jsonify({
                 'prediction': pred_label,
                 'reason': reason,
                 'attack_type': attack_type,
                 'features': features_dict,
-                'warning': warning
+                'warning': warning,
+                'explanation': explanation,
+                'flagged_features': top_features if pred_label == 'malicious' else []
             }), 200
         else:
             return jsonify({'error': 'Request must be JSON'}), 400
@@ -406,11 +300,73 @@ def stats():
     total = len(last_predictions)
     benign = sum(1 for p in last_predictions if p['label'] == 'benign')
     malicious = sum(1 for p in last_predictions if p['label'] == 'malicious')
-    # Return keys as expected by frontend: total, benign, malicious
+    # Try to load F1 score and feature importance from model training (if available)
+    try:
+        import os
+        import joblib
+        from utils.train_model import train_model
+        import pandas as pd
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+        import shap
+        df = pd.read_csv('processed_web_traffic.csv')
+        model, f1, shap_values, feature_importance = train_model(df)
+        f1_score_val = round(f1, 3)
+        # Feature importance
+        sorted_features = sorted(feature_importance.items(), key=lambda x: x[1], reverse=True)
+        feature_importance_list = [f[0] for f in sorted_features[:5]]
+
+        # F1 Score plot
+        plt.figure(figsize=(4,2))
+        plt.bar(['F1 Score'], [f1_score_val], color='#fda085')
+        plt.ylim(0,1)
+        plt.title('F1 Score')
+        plt.savefig('static/f1_score.png')
+        plt.close()
+
+        # Correlation heatmap
+        plt.figure(figsize=(8,6))
+        corr = df.corr(numeric_only=True)
+        sns.heatmap(corr, cmap='coolwarm', annot=False)
+        plt.title('Feature Correlation Heatmap')
+        plt.tight_layout()
+        plt.savefig('static/corr_heatmap.png')
+        plt.close()
+
+        # Overfitting plot (Train vs Test Accuracy)
+        from sklearn.metrics import accuracy_score
+        X = df[list(feature_importance.keys())]
+        y = df['classification'].map({'benign':0, 'malicious':1})
+        from sklearn.model_selection import train_test_split
+        X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.2, random_state=42)
+        train_acc = accuracy_score(y_train, model.predict(X_train))
+        test_acc = accuracy_score(y_test, model.predict(X_test))
+        plt.figure(figsize=(4,2))
+        plt.bar(['Train','Test'], [train_acc, test_acc], color=['#f6d365','#fda085'])
+        plt.ylim(0,1)
+        plt.title('Overfitting (Train vs Test Accuracy)')
+        plt.savefig('static/overfitting.png')
+        plt.close()
+
+        # SHAP summary plot
+        plt.figure(figsize=(8,6))
+        shap.summary_plot(shap_values.values, shap_values.data, feature_names=list(feature_importance.keys()), show=False)
+        plt.tight_layout()
+        plt.savefig('static/shap_summary.png')
+        plt.close()
+    except Exception as e:
+        f1_score_val = 'N/A'
+        feature_importance_list = []
     return jsonify({
         'total': total,
         'benign': benign,
-        'malicious': malicious
+        'malicious': malicious,
+        'blocked': 0,  # Placeholder, update if you track blocked requests
+        'status': 'OK',
+        'f1_score': f1_score_val,
+        'feature_importance': feature_importance_list
     }), 200
 
 @app.route('/logs', methods=['GET'])

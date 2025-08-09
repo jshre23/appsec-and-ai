@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
       body {
-        background: linear-gradient(120deg, #f6d365 0%, #fda085 100%);
+        background: linear-gradient(120deg, #a47d97 0%, #fda085 100%);
         min-height: 100vh;
         font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
         position: relative;
@@ -83,40 +83,47 @@
           </div>
           <div class="card-body p-5">
             <form id="manualForm">
-              <div class="mb-3">
-                <label class="form-label">URL</label>
-                <input type="text" class="form-control" name="URL" required placeholder="https://example.com/page?param=value">
-              </div>
-              <div class="mb-3">
-                <label class="form-label">HTTP Method</label>
-                <select class="form-select" name="Method">
-                  <option>GET</option>
-                  <option>POST</option>
-                  <option>PUT</option>
-                  <option>DELETE</option>
-                  <option>PATCH</option>
-                </select>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">User-Agent</label>
-                <input type="text" class="form-control" name="User-Agent" placeholder="Mozilla/5.0 ...">
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Host</label>
-                <input type="text" class="form-control" name="host" placeholder="example.com">
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Content-Type</label>
-                <input type="text" class="form-control" name="content-type" value="application/x-www-form-urlencoded">
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Request Body</label>
-                <textarea class="form-control" name="request_body" rows="3" placeholder="param1=value1&param2=value2"></textarea>
+              <div class="row">
+                <div class="col-md-6">
+                  <h5 class="mb-3">Core Prediction Features</h5>
+                  <div class="mb-3"><label class="form-label">URL</label><input type="text" class="form-control" name="URL" value="/login.php?user=admin"><small class="text-muted">Full request URL (e.g. /login.php?user=admin)</small></div>
+                  <div class="mb-3"><label class="form-label">Request Body</label><input type="text" class="form-control" name="request_body" value="username=admin&password=1234"><small class="text-muted">POST/PUT/PATCH body parameters</small></div>
+                  <div class="mb-3"><label class="form-label">HTTP Method</label><input type="text" class="form-control" name="Method" value="POST"><small class="text-muted">GET, POST, PUT, DELETE, PATCH</small></div>
+                  <div class="mb-3"><label class="form-label">User-Agent</label><input type="text" class="form-control" name="User-Agent" value="Mozilla/5.0"><small class="text-muted">Browser or client identifier</small></div>
+                  <div class="mb-3"><label class="form-label">Host</label><input type="text" class="form-control" name="host" value="localhost"><small class="text-muted">Domain or IP (e.g. localhost)</small></div>
+                  <div class="mb-3"><label class="form-label">Content-Type</label><input type="text" class="form-control" name="content-type" value="application/x-www-form-urlencoded"><small class="text-muted">MIME type of request body</small></div>
+                  <div class="mb-3"><label class="form-label">url_domain</label><input type="text" class="form-control" name="url_domain" value="example.com"><small class="text-muted">Domain extracted from URL</small></div>
+                  <div class="mb-3"><label class="form-label">url_length</label><input type="number" class="form-control" name="url_length" value="24"><small class="text-muted">Length of URL</small></div>
+                  <div class="mb-3"><label class="form-label">num_params</label><input type="number" class="form-control" name="num_params" value="2"><small class="text-muted">Number of parameters in URL/body</small></div>
+                  <div class="mb-3"><label class="form-label">has_login</label><input type="number" class="form-control" name="has_login" value="1"><small class="text-muted">Login detected in request (0/1)</small></div>
+                  <div class="mb-3"><label class="form-label">user_agent_length</label><input type="number" class="form-control" name="user_agent_length" value="12"><small class="text-muted">Length of User-Agent string</small></div>
+                  <div class="mb-3"><label class="form-label">content_type_length</label><input type="number" class="form-control" name="content_type_length" value="9"><small class="text-muted">Length of Content-Type string</small></div>
+                  <div class="mb-3"><label class="form-label">has_suspicious_keywords</label><input type="number" class="form-control" name="has_suspicious_keywords" value="0"><small class="text-muted">Suspicious keywords in URL/body (0/1)</small></div>
+                  <div class="mb-3"><label class="form-label">body_length</label><input type="number" class="form-control" name="body_length" value="20"><small class="text-muted">Length of request body</small></div>
+                  <div class="mb-3"><label class="form-label">body_has_suspicious</label><input type="number" class="form-control" name="body_has_suspicious" value="0"><small class="text-muted">Suspicious keywords in body (0/1)</small></div>
+                  <div class="mb-3"><label class="form-label">param_entropy</label><input type="number" step="0.01" class="form-control" name="param_entropy" value="1.2"><small class="text-muted">Entropy of parameter values</small></div>
+                  <div class="mb-3"><label class="form-label">num_param_names</label><input type="number" class="form-control" name="num_param_names" value="2"><small class="text-muted">Number of unique parameter names</small></div>
+                  <div class="mb-3"><label class="form-label">body_special_char_count</label><input type="number" class="form-control" name="body_special_char_count" value="1"><small class="text-muted">Special characters in body</small></div>
+                </div>
+                <div class="col-md-6">
+                  <h5 class="mb-3">Advanced/Behavioral Features</h5>
+                  <div class="mb-3"><label class="form-label">requests_per_session</label><input type="number" class="form-control" name="requests_per_session" value="1"><small class="text-muted">Requests per session</small></div>
+                  <div class="mb-3"><label class="form-label">session_duration</label><input type="number" class="form-control" name="session_duration" value="30"><small class="text-muted">Session duration in seconds</small></div>
+                  <div class="mb-3"><label class="form-label">mean_time_between_reqs</label><input type="number" class="form-control" name="mean_time_between_reqs" value="10"><small class="text-muted">Mean time between requests (s)</small></div>
+                  <div class="mb-3"><label class="form-label">unique_endpoints</label><input type="number" class="form-control" name="unique_endpoints" value="1"><small class="text-muted">Unique endpoints in session</small></div>
+                  <div class="mb-3"><label class="form-label">user_agent_changes</label><input type="number" class="form-control" name="user_agent_changes" value="0"><small class="text-muted">User-Agent changes in session</small></div>
+                  <div class="mb-3"><label class="form-label">session_duration_z</label><input type="number" step="0.01" class="form-control" name="session_duration_z" value="0.1"><small class="text-muted">Z-score of session duration</small></div>
+                  <div class="mb-3"><label class="form-label">session_duration_outlier</label><input type="number" class="form-control" name="session_duration_outlier" value="0"><small class="text-muted">Session duration outlier flag (0/1)</small></div>
+                  <div class="mb-3"><label class="form-label">behavior_anomaly_score</label><input type="number" step="0.01" class="form-control" name="behavior_anomaly_score" value="0.01"><small class="text-muted">Behavioral anomaly score</small></div>
+                  <div class="mb-3"><label class="form-label">behavioral_anomaly_flag</label><input type="number" class="form-control" name="behavioral_anomaly_flag" value="0"><small class="text-muted">Behavioral anomaly detected (0/1)</small></div>
+                  <div class="mb-3"><label class="form-label">svm_anomaly_score</label><input type="number" step="0.01" class="form-control" name="svm_anomaly_score" value="0.02"><small class="text-muted">SVM anomaly score</small></div>
+                  <div class="mb-3"><label class="form-label">svm_anomaly_flag</label><input type="number" class="form-control" name="svm_anomaly_flag" value="0"><small class="text-muted">SVM anomaly flag (0/1)</small></div>
+                </div>
               </div>
               <button type="submit" class="btn btn-primary btn-lg w-100 mb-2"><i class="fa fa-magic"></i> Predict</button>
               <a href="/" class="btn btn-link btn-lg w-100"><i class="fa fa-home"></i> Back to Home</a>
             </form>
-            <div id="result"></div>
+            <div id="result" class="mt-3"></div>
           </div>
         </div>
       </div>
@@ -127,13 +134,63 @@
   </div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+    // Required backend features and sensible defaults
+    const requiredFeatures = [
+      'URL', 'request_body', 'User-Agent', 'Method', 'num_params', 'session_duration', 'user_agent_length',
+      'url_length', 'svm_anomaly_flag', 'body_special_char_count', 'svm_anomaly_score', 'url_domain',
+      'param_entropy', 'num_param_names', 'user_agent_changes', 'body_has_suspicious', 'session_duration_z',
+      'has_suspicious_keywords', 'has_login', 'unique_endpoints', 'behavioral_anomaly_flag', 'requests_per_session',
+      'content_type_length', 'mean_time_between_reqs', 'body_length', 'session_duration_outlier', 'behavior_anomaly_score',
+      'content-type', 'host'
+    ];
+    const exampleValues = {
+      'num_params': 2,
+      'session_duration': 30,
+      'user_agent_length': 12,
+      'url_length': 24,
+      'svm_anomaly_flag': 0,
+      'body_special_char_count': 1,
+      'svm_anomaly_score': 0.02,
+      'url_domain': 'example.com',
+      'param_entropy': 1.2,
+      'num_param_names': 2,
+      'user_agent_changes': 0,
+      'body_has_suspicious': 0,
+      'session_duration_z': 0.1,
+      'has_suspicious_keywords': 0,
+      'has_login': 1,
+      'unique_endpoints': 1,
+      'behavioral_anomaly_flag': 0,
+      'requests_per_session': 1,
+      'content_type_length': 9,
+      'mean_time_between_reqs': 10,
+      'body_length': 20,
+      'session_duration_outlier': 0,
+      'behavior_anomaly_score': 0.01,
+      'content-type': 'application/x-www-form-urlencoded',
+      'host': 'localhost'
+    };
     document.getElementById('manualForm').addEventListener('submit', function(e) {
       e.preventDefault();
       var form = document.getElementById('manualForm');
       var formData = {};
       Array.from(form.elements).forEach(function(el) {
-        if (el.name) formData[el.name] = el.type === 'checkbox' ? el.checked : el.value;
+        if (el.name) {
+          // Convert numeric fields to numbers
+          if (el.type === 'number' && el.value !== '') {
+            formData[el.name] = Number(el.value);
+          } else {
+            formData[el.name] = el.type === 'checkbox' ? el.checked : el.value;
+          }
+        }
       });
+      // Fill in missing required features with defaults
+      requiredFeatures.forEach(function(key) {
+        if (!(key in formData)) {
+          formData[key] = exampleValues[key] !== undefined ? exampleValues[key] : '';
+        }
+      });
+      document.getElementById('result').innerHTML = '<span class="text-info"><i class="fa fa-spinner fa-spin"></i> Sending prediction...</span>';
       fetch('/predict', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -147,15 +204,16 @@
         return response.json();
       })
       .then(data => {
-        if (data && data.success) {
+        if (data && data.prediction) {
           let icon = data.prediction === 'malicious' ? '<i class="fa fa-bug text-danger"></i>' : '<i class="fa fa-shield-alt text-success"></i>';
           let color = data.prediction === 'malicious' ? 'text-danger' : 'text-success';
-          // Animate result
-          let resultDiv = document.getElementById('result');
-          resultDiv.innerHTML = `<strong>Prediction:</strong> ${icon} <span class="${color}">${data.prediction}</span>`;
-          resultDiv.classList.add('animate__animated', 'animate__fadeIn');
-          setTimeout(() => resultDiv.classList.remove('animate__animated', 'animate__fadeIn'), 1200);
-        } else if (data && !data.success) {
+          let explanation = data.explanation ? `<div class="mt-2 alert alert-warning"><strong>Note:</strong> ${data.explanation}</div>` : '';
+          let flaggedFeatures = '';
+          if (data.prediction === 'malicious' && data.flagged_features && Array.isArray(data.flagged_features) && data.flagged_features.length > 0) {
+            flaggedFeatures = `<div class="mt-2 alert alert-danger"><strong>Flagged Features:</strong> ${data.flagged_features.map(f => `<span class="badge bg-danger me-1">${f}</span>`).join(' ')}</div>`;
+          }
+          document.getElementById('result').innerHTML = `<strong>Prediction:</strong> ${icon} <span class="${color}">${data.prediction}</span><br><strong>Reason:</strong> ${data.reason}<br><strong>Attack Type:</strong> ${data.attack_type}${explanation}${flaggedFeatures}`;
+        } else if (data && data.error) {
           document.getElementById('result').innerHTML = '<span class="text-danger">' + (data.error || 'Prediction failed') + '</span>';
         }
       })
@@ -165,10 +223,5 @@
       return false;
     });
   </script>
-</body>
-</html>
-            <button type="submit">Submit</button>
-        </form>
-    </div>
 </body>
 </html>

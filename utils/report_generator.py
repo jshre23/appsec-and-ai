@@ -2,6 +2,8 @@
 Generates PDF and HTML reports summarizing detected attacks, blocked requests, and system performance.
 """
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import shap
 from jinja2 import Environment, FileSystemLoader

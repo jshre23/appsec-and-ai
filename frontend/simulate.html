@@ -5,34 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simulate Prediction - AI Web Security Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
       body {
-        min-height: 100vh;
-        font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
         background: linear-gradient(120deg, #f6d365 0%, #fda085 100%);
-        background-attachment: fixed;
+        font-family: 'Segoe UI', Arial, sans-serif;
       }
       .glass-card {
-        background: rgba(255,255,255,0.85);
+        background: #fff;
         border-radius: 2rem;
         box-shadow: 0 8px 32px 0 rgba(31,38,135,0.18);
-        backdrop-filter: blur(8px);
-        border: 1.5px solid rgba(255,255,255,0.25);
-        overflow: hidden;
-        margin-top: 40px;
-        margin-bottom: 40px;
+        padding: 2rem;
+        margin-top: 2rem;
       }
       .simulate-header {
-        background: linear-gradient(90deg, #f6d365 0%, #fda085 100%);
-        color: #fff;
-        font-size: 2.2rem;
-        font-weight: 800;
-        letter-spacing: 0.06em;
-        padding: 2rem 0 1.2rem 0;
-        border-radius: 2rem 2rem 0 0;
-        box-shadow: 0 4px 24px #fda08555;
-        text-shadow: 0 2px 8px #fda08555;
+        color: #333;
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
         text-align: center;
       }
       .form-label { font-weight: 600; color: #fda085; }
@@ -84,88 +73,44 @@
     </style>
 </head>
 <body>
-  <div class="container py-5">
-    <div class="row justify-content-center">
-      <div class="col-xl-8 col-lg-10">
-        <div class="glass-card">
-          <div class="simulate-header">
-            <i class="fa fa-magic me-2"></i>Simulate Prediction
-          </div>
-          <div class="card-body p-5">
-            <form id="predictForm">
-              <div class="mb-3">
-                <label class="form-label">HTTP Method</label>
-                <select name="Method" class="form-select" required>
-                  <option>GET</option>
-                  <option>POST</option>
-                  <option>PUT</option>
-                  <option>DELETE</option>
-                  <option>PATCH</option>
-                  <option>OPTIONS</option>
-                  <option>HEAD</option>
-                </select>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">User-Agent</label>
-                <select name="User-Agent" class="form-select" required></select>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Host</label>
-                <input type="text" name="host" class="form-control" value="example.com" required />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Content-Type</label>
-                <select name="content-type" class="form-select" required>
-                  <option>application/x-www-form-urlencoded</option>
-                  <option>application/json</option>
-                  <option>multipart/form-data</option>
-                  <option>text/html</option>
-                  <option>text/plain</option>
-                </select>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">URL</label>
-                <input type="text" name="URL" class="form-control" placeholder="http://example.com/api?param=value" required />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Request Body</label>
-                <textarea name="request_body" class="form-control" placeholder="Raw HTTP request body or payload..."></textarea>
-              </div>
-              <div class="form-check mb-3">
-                <input type="checkbox" name="is_behavioral_anomaly" class="form-check-input" id="anomalyCheck" />
-                <label class="form-check-label" for="anomalyCheck">Behavioral Anomaly</label>
-              </div>
-              <button type="submit" class="btn btn-primary w-100 mb-2"><i class="fa fa-magic"></i> Predict</button>
-            </form>
-            <a href="/" class="btn btn-link btn-lg w-100"><i class="fa fa-home"></i> Back to Home</a>
-            <div id="result"></div>
-          </div>
-        </div>
+  <div class="container">
+    <div class="glass-card">
+      <div class="simulate-header">
+        <i class="fa fa-magic text-primary"></i> Simulate Prediction
       </div>
+      <form id="predictForm">
+        <div class="mb-3">
+          <label class="form-label">Request URL</label>
+          <input type="text" class="form-control" name="URL" placeholder="http://example.com/api?param=value" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Request Body</label>
+          <textarea name="request_body" class="form-control" placeholder="Raw HTTP request body or payload..."></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">User-Agent</label>
+          <input type="text" class="form-control" name="User-Agent" placeholder="Mozilla/5.0" value="Mozilla/5.0">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">HTTP Method</label>
+          <input type="text" class="form-control" name="Method" placeholder="GET" value="GET">
+        </div>
+        <button type="submit" class="btn btn-primary w-100 mb-2"><i class="fa fa-magic"></i> Predict</button>
+      </form>
+      <div id="result" class="mt-3"></div>
     </div>
-    <footer>
-      <span>🚀 AI Web Security Dashboard &copy; 2025 | <i class="fa fa-heart text-danger"></i> Modern UI</span>
-    </footer>
   </div>
+  <footer>
+    <span>🚀 AI Web Security Dashboard &copy; 2025 | <i class="fa fa-heart text-danger"></i> Modern UI</span>
+  </footer>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
-    // Populate User-Agent select
-    const userAgents = [
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/91.0.4472.124 Safari/537.36",
-      "curl/7.68.0",
-      "PostmanRuntime/7.26.8",
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Safari/605.1.15",
-      "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:85.0) Gecko/20100101 Firefox/85.0"
-    ];
     $(function() {
-      const uaSelect = $('select[name=User-Agent]');
-      userAgents.forEach(ua => uaSelect.append(`<option>${ua}</option>`));
       $('#predictForm').on('submit', function(e){
         e.preventDefault();
         $("#result").html('<span class="text-info"><i class="fa fa-spinner fa-spin"></i> Sending prediction...</span>');
         const data = {};
         $(this).serializeArray().forEach(item => data[item.name] = item.value);
-        data['is_behavioral_anomaly'] = $('input[name=is_behavioral_anomaly]').is(':checked') ? 1 : 0;
         $.ajax({
           url: '/predict',
           method: 'POST',
@@ -176,8 +121,9 @@
               window.location.href = xhr.responseURL;
               return;
             }
-            // Animate result
-            $('#result').html(`<strong>Prediction:</strong> <span class="fw-bold text-${resp.prediction === 'malicious' ? 'danger' : 'success'} animate__animated animate__fadeIn"><i class="fa ${resp.prediction === 'malicious' ? 'fa-bug' : 'fa-shield-alt'}"></i> ${resp.prediction}</span>`);
+            let icon = resp.prediction === 'malicious' ? '<i class="fa fa-bug text-danger"></i>' : '<i class="fa fa-shield-alt text-success"></i>';
+            let color = resp.prediction === 'malicious' ? 'text-danger' : 'text-success';
+            $('#result').html(`<strong>Prediction:</strong> ${icon} <span class="${color}">${resp.prediction}</span><br><strong>Reason:</strong> ${resp.reason}<br><strong>Attack Type:</strong> ${resp.attack_type}`);
           },
           error: function(xhr){
             let msg = (xhr.responseJSON && xhr.responseJSON.error) ? xhr.responseJSON.error : 'Unknown error';
@@ -187,3 +133,5 @@
       });
     });
   </script>
+</body>
+</html>

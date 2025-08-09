@@ -5,19 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Alert Settings - AI Web Security</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-      body { background: #f4f6fa; font-family: 'Segoe UI', Arial, sans-serif; }
-      .container { margin-top: 2rem; max-width: 600px; }
-      .card { border-radius: 1.2rem; box-shadow: 0 4px 24px #b0b8c133; }
+      body { background: linear-gradient(120deg, #f6d365 0%, #fda085 100%); font-family: 'Segoe UI', Arial, sans-serif; }
+      .alert-card { background: #fff; border-radius: 1.2rem; box-shadow: 0 4px 24px #fda08555; padding: 2rem; margin-top: 2rem; }
       .form-label { font-weight: 600; color: #fda085; }
-      .btn-primary { background: #fda085; border: none; border-radius: 1.2em; font-weight: 600; }
-      .btn-primary:hover { background: #f6d365; color: #fff; }
+      .form-control, .form-select { border-radius: 0.9rem; }
+      .instructions { background: #fffbe7; border-radius: 1rem; padding: 1.2rem; margin-bottom: 1.5rem; box-shadow: 0 2px 12px #fda08533; }
+      .endpoint { font-family: monospace; background: #f6d36522; padding: 0.3em 0.7em; border-radius: 0.7em; }
     </style>
 </head>
 <body>
   <div class="container">
-    <div class="card p-4">
-      <h2 class="mb-4">Alert Settings</h2>
+    <div class="alert-card">
+      <h2 class="mb-4"><i class="fa fa-bell text-warning"></i> Alert Settings</h2>
+      <div class="instructions mb-4">
+        <h5><i class="fa fa-info-circle text-primary"></i> How to Use Alerts</h5>
+        <ul>
+          <li>Configure and send test alerts to your email or Slack using the form below.</li>
+          <li>The backend endpoint is <span class="endpoint">/send_alert</span> and supports both <b>GET</b> (info) and <b>POST</b> (send alert).</li>
+          <li>For <b>Email</b> alerts, fill in SMTP details and recipient info.</li>
+          <li>For <b>Slack</b> alerts, provide your Slack webhook URL.</li>
+          <li>Click <b>Send Test Alert</b> to trigger the alert and see the result below.</li>
+        </ul>
+      </div>
       <form id="alertForm">
         <div class="mb-3">
           <label class="form-label">Alert Type</label>
@@ -27,68 +38,64 @@
           </select>
         </div>
         <div id="emailFields">
-          <div class="mb-3">
-            <label class="form-label">To Email</label>
-            <input type="email" class="form-control" name="to_email" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">From Email</label>
-            <input type="email" class="form-control" name="from_email" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">SMTP Server</label>
-            <input type="text" class="form-control" name="smtp_server" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">SMTP Port</label>
-            <input type="number" class="form-control" name="smtp_port" value="587" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">SMTP Username</label>
-            <input type="text" class="form-control" name="smtp_user" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">SMTP Password</label>
-            <input type="password" class="form-control" name="smtp_pass" required>
-          </div>
+          <div class="mb-3"><input type="text" class="form-control" name="to_email" placeholder="To Email (recipient)"></div>
+          <div class="mb-3"><input type="text" class="form-control" name="from_email" placeholder="From Email (sender)"></div>
+          <div class="mb-3"><input type="text" class="form-control" name="smtp_server" placeholder="SMTP Server"></div>
+          <div class="mb-3"><input type="text" class="form-control" name="smtp_port" placeholder="SMTP Port"></div>
+          <div class="mb-3"><input type="text" class="form-control" name="smtp_user" placeholder="SMTP User"></div>
+          <div class="mb-3"><input type="password" class="form-control" name="smtp_pass" placeholder="SMTP Password"></div>
         </div>
         <div id="slackFields" style="display:none;">
-          <div class="mb-3">
-            <label class="form-label">Slack Webhook URL</label>
-            <input type="text" class="form-control" name="webhook_url">
-          </div>
+          <div class="mb-3"><input type="text" class="form-control" name="webhook_url" placeholder="Slack Webhook URL"></div>
         </div>
-        <div class="mb-3">
-          <label class="form-label">Test Message</label>
-          <input type="text" class="form-control" name="message" value="Test alert from AI Web Security!" required>
-        </div>
-        <button type="button" class="btn btn-primary" onclick="sendAlert()">Send Test Alert</button>
-        <div id="alertMsg" class="text-success mt-3" style="display:none;">Alert sent!</div>
+        <div class="mb-3"><input type="text" class="form-control" name="message" value="Test alert from AI Web Security!" required></div>
+        <button type="button" class="btn btn-primary w-100" id="sendAlertBtn"><i class="fa fa-paper-plane"></i> Send Test Alert</button>
+        <span id="alertMsg" class="ms-3"></span>
       </form>
+      <div class="mt-4">
+        <h6><i class="fa fa-terminal text-info"></i> Endpoint Usage Example</h6>
+        <div class="mb-2"><span class="endpoint">POST /send_alert</span> <span class="text-muted">(with JSON body)</span></div>
+        <pre class="bg-light p-2 rounded" style="font-size:0.97em;">{
+  "type": "email",
+  "to_email": "recipient@example.com",
+  "from_email": "sender@example.com",
+  "smtp_server": "smtp.example.com",
+  "smtp_port": "587",
+  "smtp_user": "smtp-user",
+  "smtp_pass": "smtp-password",
+  "message": "Test alert from AI Web Security!"
+}
+</pre>
+        <pre class="bg-light p-2 rounded" style="font-size:0.97em;">{
+  "type": "slack",
+  "webhook_url": "https://hooks.slack.com/services/XXXX/YYYY/ZZZZ",
+  "message": "Test alert from AI Web Security!"
+}
+</pre>
+      </div>
     </div>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     document.getElementById('alertType').addEventListener('change', function() {
-      if (this.value === 'email') {
-        document.getElementById('emailFields').style.display = '';
-        document.getElementById('slackFields').style.display = 'none';
-      } else {
-        document.getElementById('emailFields').style.display = 'none';
-        document.getElementById('slackFields').style.display = '';
-      }
+      document.getElementById('emailFields').style.display = this.value === 'email' ? '' : 'none';
+      document.getElementById('slackFields').style.display = this.value === 'slack' ? '' : 'none';
     });
-    function sendAlert() {
+    document.getElementById('sendAlertBtn').onclick = function() {
       const form = document.getElementById('alertForm');
-      const data = Object.fromEntries(new FormData(form).entries());
+      const data = {};
+      Array.from(form.elements).forEach(el => { if (el.name) data[el.name] = el.value; });
       fetch('/send_alert', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
-      }).then(r => r.json()).then(resp => {
-        document.getElementById('alertMsg').style.display = resp.success ? 'block' : 'none';
-        if (!resp.success) alert('Alert failed. Check your settings.');
+      })
+      .then(res => res.json())
+      .then(resp => {
+        document.getElementById('alertMsg').textContent = resp.message || resp.error || '';
+        document.getElementById('alertMsg').className = resp.success ? 'text-success ms-3' : 'text-danger ms-3';
       });
-    }
+    };
   </script>
 </body>
 </html>

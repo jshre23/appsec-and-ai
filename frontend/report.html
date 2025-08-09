@@ -2,22 +2,95 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Report - AI Web Security</title>
+    <title>Attack Detection System Report</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-      body { background: #f4f6fa; font-family: 'Segoe UI', Arial, sans-serif; }
-      .report-frame { width: 100%; height: 90vh; border: none; border-radius: 1.2rem; box-shadow: 0 4px 24px #b0b8c133; }
-      .container { margin-top: 2rem; }
+        body { background: linear-gradient(120deg, #f6d365 0%, #fda085 100%); font-family: 'Segoe UI', Arial, sans-serif; }
+        .report-card { background: #fff; border-radius: 1.2rem; box-shadow: 0 4px 24px #fda08555; padding: 2.5rem; margin-top: 2rem; }
+        .section-title { color: #fda085; font-weight: 700; margin-bottom: 1.2rem; }
+        .highlight { color: #e74c3c; font-weight: bold; }
+        .desc { color: #555; font-size: 1.05em; margin-bottom: 1.2rem; }
+        .img-section img { border-radius: 1rem; box-shadow: 0 2px 12px #fda08533; margin-bottom: 1rem; }
+        .metric { font-size: 1.2em; font-weight: 600; color: #2c3e50; }
+        .icon { margin-right: 0.5em; }
+        .feature-list { list-style: none; padding-left: 0; }
+        .feature-list li { background: #fffbe7; border-radius: 0.7em; margin-bottom: 0.5em; padding: 0.5em 1em; color: #fda085; font-weight: 500; }
     </style>
 </head>
 <body>
-  <div class="container">
-    <h1 class="mb-4">System Report</h1>
-    <iframe class="report-frame" src="/report.html"></iframe>
-    <div class="mt-3">
-      <a href="/generate_report" class="btn btn-primary">Regenerate Report</a>
+    <div class="container">
+      <div class="report-card">
+        <h1 class="mb-4"><i class="fa fa-shield-halved text-warning icon"></i> Attack Detection System Report</h1>
+        <div class="desc mb-4">
+          <b>Comprehensive summary of your web security system's performance, detected attacks, and model insights.</b>
+        </div>
+        <div class="section mb-4">
+          <h2 class="section-title"><i class="fa fa-chart-line"></i> Model Performance</h2>
+          <div class="metric mb-2">F1 Score: <span class="highlight" id="f1Score">...</span></div>
+          <div class="desc">The F1 score measures the accuracy of the attack detection model. Higher is better.</div>
+          <div class="desc">Feature Importance:</div>
+          <ul class="feature-list" id="featureImportance">
+            <li>Loading...</li>
+          </ul>
+        </div>
+        <div class="section mb-4">
+          <h2 class="section-title"><i class="fa fa-bug"></i> Detected Attacks</h2>
+          <div class="metric" id="detectedAttacks">...</div>
+          <div class="desc">Number of attacks detected by the system in the last scan.</div>
+        </div>
+        <div class="section mb-4">
+          <h2 class="section-title"><i class="fa fa-ban"></i> Blocked Requests</h2>
+          <div class="metric" id="blockedRequests">...</div>
+          <div class="desc">Requests automatically blocked due to suspicious activity.</div>
+        </div>
+        <div class="section mb-4">
+          <h2 class="section-title"><i class="fa fa-server"></i> System Performance</h2>
+          <div class="metric" id="systemPerformance">...</div>
+          <div class="desc">Overall health and responsiveness of the security system.</div>
+        </div>
+        <div class="img-section mb-4">
+          <h2 class="section-title"><i class="fa fa-bar-chart"></i> F1 Score Visualization</h2>
+          <img src="static/f1_score.png" alt="F1 Score" style="max-width:300px;">
+        </div>
+        <div class="img-section mb-4">
+          <h2 class="section-title"><i class="fa fa-th"></i> Correlation Heatmap</h2>
+          <img src="static/corr_heatmap.png" alt="Correlation Heatmap" style="max-width:100%;">
+        </div>
+        <div class="img-section mb-4">
+          <h2 class="section-title"><i class="fa fa-balance-scale"></i> Overfitting (Train vs Test Accuracy)</h2>
+          <img src="static/overfitting.png" alt="Overfitting Plot" style="max-width:300px;">
+        </div>
+        <div class="img-section mb-4">
+          <h2 class="section-title"><i class="fa fa-brain"></i> SHAP Summary</h2>
+          <img src="static/shap_summary.png" alt="SHAP Summary Plot" style="max-width:100%;">
+        </div>
+      </div>
     </div>
-  </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // Fetch live stats from backend and update report
+      function updateReport() {
+        fetch('/stats')
+          .then(response => response.json())
+          .then(data => {
+            document.getElementById('detectedAttacks').textContent = data.malicious ?? '0';
+            document.getElementById('blockedRequests').textContent = data.blocked ?? '0';
+            document.getElementById('systemPerformance').textContent = data.status ?? 'OK';
+            document.getElementById('f1Score').textContent = data.f1_score ?? 'N/A';
+            if (Array.isArray(data.feature_importance)) {
+              document.getElementById('featureImportance').innerHTML = data.feature_importance.map(f => `<li>${f}</li>`).join('');
+            }
+          })
+          .catch(() => {
+            document.getElementById('detectedAttacks').textContent = 'N/A';
+            document.getElementById('blockedRequests').textContent = 'N/A';
+            document.getElementById('systemPerformance').textContent = 'N/A';
+            document.getElementById('f1Score').textContent = 'N/A';
+            document.getElementById('featureImportance').innerHTML = '<li>Error loading features</li>';
+          });
+      }
+      updateReport();
+    </script>
 </body>
 </html>
