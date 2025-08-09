@@ -1,0 +1,1 @@
+Copilot write test: If you see this file, writing to frontend/static/ works.

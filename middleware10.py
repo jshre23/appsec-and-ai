@@ -301,6 +301,8 @@ def stats():
     benign = sum(1 for p in last_predictions if p['label'] == 'benign')
     malicious = sum(1 for p in last_predictions if p['label'] == 'malicious')
     # Try to load F1 score and feature importance from model training (if available)
+    import logging
+    error_messages = []
     try:
         import os
         import joblib
@@ -312,59 +314,35 @@ def stats():
         import seaborn as sns
         import shap
         df = pd.read_csv('processed_web_traffic.csv')
+        # Automatic cleaning: remove columns with lists/dicts, convert numeric columns
+        for col in df.columns:
+            if df[col].apply(lambda x: isinstance(x, (list, dict))).any():
+                df.drop(columns=[col], inplace=True)
+        # Try to convert object columns to float if possible
+        for col in df.select_dtypes(include='object').columns:
+            try:
+                df[col] = df[col].astype(float)
+            except:
+                pass
         model, f1, shap_values, feature_importance = train_model(df)
         f1_score_val = round(f1, 3)
         # Feature importance
         sorted_features = sorted(feature_importance.items(), key=lambda x: x[1], reverse=True)
         feature_importance_list = [f[0] for f in sorted_features[:5]]
 
-        # F1 Score plot
-        plt.figure(figsize=(4,2))
-        plt.bar(['F1 Score'], [f1_score_val], color='#fda085')
-        plt.ylim(0,1)
-        plt.title('F1 Score')
-        plt.savefig('static/f1_score.png')
-        plt.close()
-
-        # Correlation heatmap
-        plt.figure(figsize=(8,6))
-        corr = df.corr(numeric_only=True)
-        sns.heatmap(corr, cmap='coolwarm', annot=False)
-        plt.title('Feature Correlation Heatmap')
-        plt.tight_layout()
-        plt.savefig('static/corr_heatmap.png')
-        plt.close()
-
-        # Overfitting plot (Train vs Test Accuracy)
-        from sklearn.metrics import accuracy_score
-        X = df[list(feature_importance.keys())]
-        y = df['classification'].map({'benign':0, 'malicious':1})
-        from sklearn.model_selection import train_test_split
-        X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.2, random_state=42)
-        train_acc = accuracy_score(y_train, model.predict(X_train))
-        test_acc = accuracy_score(y_test, model.predict(X_test))
-        plt.figure(figsize=(4,2))
-        plt.bar(['Train','Test'], [train_acc, test_acc], color=['#f6d365','#fda085'])
-        plt.ylim(0,1)
-        plt.title('Overfitting (Train vs Test Accuracy)')
-        plt.savefig('static/overfitting.png')
-        plt.close()
-
-        # SHAP summary plot
-        plt.figure(figsize=(8,6))
-        shap.summary_plot(shap_values.values, shap_values.data, feature_names=list(feature_importance.keys()), show=False)
-        plt.tight_layout()
-        plt.savefig('static/shap_summary.png')
-        plt.close()
     except Exception as e:
+        msg = f'/stats error: {e}'
+        logging.error(msg)
+        error_messages.append(msg)
         f1_score_val = 'N/A'
         feature_importance_list = []
+    # System performance: basic check (can be expanded)
+    system_status = 'OK' if f1_score_val != 'N/A' and total > 0 else 'Needs Attention'
     return jsonify({
         'total': total,
         'benign': benign,
         'malicious': malicious,
-        'blocked': 0,  # Placeholder, update if you track blocked requests
-        'status': 'OK',
+        'status': system_status,
         'f1_score': f1_score_val,
         'feature_importance': feature_importance_list
     }), 200
