@@ -1,3 +1,13 @@
+import signal
+import sys
+# Graceful shutdown handler
+def graceful_shutdown(signum, frame):
+    print("\n[INFO] Shutting down gracefully...")
+    # Add any cleanup logic here (e.g., save logs, close files)
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, graceful_shutdown)
+signal.signal(signal.SIGTERM, graceful_shutdown)
 # Serve suggestions.json for the homepage suggestions box
 from flask import send_from_directory
 from utils.report_generator import ReportGenerator
@@ -19,15 +29,26 @@ from datetime import datetime
 
 
 
-# Setup logging for blocked requests
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s %(levelname)s %(message)s',
-    handlers=[
-        logging.FileHandler('blocked_requests.log'),
-        logging.StreamHandler()
-    ]
-)
+
+# Persistent prediction log file
+PREDICTION_LOG_FILE = 'prediction_logs.json'
+
+# Load logs on startup
+import json
+if os.path.exists(PREDICTION_LOG_FILE):
+    try:
+        with open(PREDICTION_LOG_FILE, 'r') as f:
+            last_predictions.extend(json.load(f))
+    except Exception as e:
+        print(f"Error loading prediction logs: {e}")
+
+# Save logs after each new prediction
+def save_prediction_log():
+    try:
+        with open(PREDICTION_LOG_FILE, 'w') as f:
+            json.dump(last_predictions, f, indent=2)
+    except Exception as e:
+        print(f"Error saving prediction logs: {e}")
 
 app = Flask(__name__, static_folder='frontend', template_folder='frontend')
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -188,11 +209,14 @@ session_store = {}
 SESSION_WINDOW = 300  # seconds (5 min window for session activity)
 
 # --- Burp/ZAP Integration Endpoint Registration ---
+import traceback
 try:
     from integrations.forward_api import integrations_api
     app.register_blueprint(integrations_api, url_prefix='/integrations')
+    print("[INFO] /integrations/forward endpoint registered successfully.")
 except Exception as e:
-    print(f"Burp/ZAP integration import failed: {e}")
+    print(f"[ERROR] Burp/ZAP integration import failed: {e}")
+    traceback.print_exc()
 
 # --- Persistent anomaly models trained on synthetic normal data ---
 from sklearn.ensemble import IsolationForest
@@ -276,11 +300,14 @@ def predict():
                 'attack_type': attack_type,
                 'features': features_dict,
                 'warning': warning,
-                'behavioral_anomaly_flag': features_dict.get('behavioral_anomaly_flag', 0)
+                'behavioral_anomaly_flag': features_dict.get('behavioral_anomaly_flag', 0),
+                'timestamp': datetime.utcnow().isoformat() + 'Z'
             }
             last_predictions.append(pred_record)
+            save_prediction_log()
             if len(last_predictions) > MAX_LOG_SIZE:
                 last_predictions.pop(0)
+                save_prediction_log()
             return jsonify({
                 'prediction': pred_label,
                 'reason': reason,
@@ -347,10 +374,15 @@ def stats():
         'feature_importance': feature_importance_list
     }), 200
 
+
+# Serve logs.html page
 @app.route('/logs', methods=['GET'])
-def logs():
-    recent_logs = last_predictions[-10:][::-1]
-    return jsonify({'success': True, 'logs': recent_logs}), 200
+def serve_logs():
+    from flask import request
+    if request.args.get('json') == '1':
+        # Return all logs as JSON for the logs page
+        return jsonify({'success': True, 'logs': last_predictions[::-1]}), 200
+    return render_template('logs.html')
 
 
 @app.route('/last_predictions', methods=['GET'])

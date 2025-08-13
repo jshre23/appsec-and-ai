@@ -65,7 +65,14 @@ def train_model(df):
     y_pred = xgb_pipeline.predict(X_test)
     f1 = f1_score(y_test, y_pred)
     # SHAP summary
-    explainer = shap.Explainer(xgb_pipeline.named_steps['xgbclassifier'], preprocessor.transform(X_train))
-    shap_values = explainer(preprocessor.transform(X_test))
+    explainer = shap.Explainer(
+        xgb_pipeline.named_steps['xgbclassifier'],
+        preprocessor.transform(X_train).toarray()  # Convert sparse to dense
+    )
+    X_test_dense = preprocessor.transform(X_test)
+    if hasattr(X_test_dense, 'toarray'):
+        X_test_dense = X_test_dense.toarray()
+    X_test_dense = X_test_dense.astype(float)
+    shap_values = explainer(X_test_dense)
     feature_importance = dict(zip(features, xgb_pipeline.named_steps['xgbclassifier'].feature_importances_))
     return xgb_pipeline, f1, shap_values, feature_importance

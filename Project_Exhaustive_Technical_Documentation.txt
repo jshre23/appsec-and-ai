@@ -1,0 +1,87 @@
+AI-Based Security Framework for Detection and Prevention of Web Application Vulnerabilities
+
+1. Project Motivation and Differentiation
+This project was undertaken to address the growing sophistication of web application attacks, which often bypass traditional rule-based security systems. Unlike legacy products that rely on static signatures or simple heuristics, this framework leverages AI and behavioral analytics to detect both known and unknown threats in real time. The integration of machine learning models, anomaly detection, and proxy-based live traffic analysis sets it apart from most commercial solutions, which typically lack deep behavioral analysis and real-time retraining capabilities.
+
+2. Technology Stack and Package Details
+- Python 3.12: Chosen for its rich ecosystem and compatibility with ML libraries.
+- Flask: Lightweight, flexible web framework for building REST APIs and serving the dashboard.
+- XGBoost: Used for its superior performance on tabular data, fast training, and high accuracy. It is robust to missing data and provides feature importance for explainability.
+- scikit-learn: Provides SVM, IsolationForest, metrics (f1_score, recall, precision, accuracy), and preprocessing utilities.
+- SHAP: For model explainability, visualizing feature impact on predictions.
+- pandas, numpy: For data manipulation and analysis.
+- joblib: For model serialization.
+- matplotlib, seaborn: For data visualization and reporting.
+- Bootstrap, FontAwesome: For responsive, modern frontend UI.
+- mitmproxy, Burp Suite: For real-time traffic interception and integration with the backend.
+- Docker: For containerized deployment, ensuring reproducibility and easy scaling.
+
+3. Architectural Overview
+- The backend (Flask) exposes REST endpoints for prediction, stats, logs, reporting, feedback, alerting, retraining, and session visualization.
+- The frontend (HTML/CSS/JS) provides live tables, dynamic stats, downloadable reports, and persistent logs.
+- Data flows from intercepted HTTP requests (via proxy or direct integration) to the backend, where it is analyzed and classified.
+- All predictions and feedback are logged for audit and retraining.
+- The system supports real-time blocking and alerting based on model outputs.
+
+4. Sequence of Actions and Data Flow
+- Incoming HTTP requests are intercepted by proxy (mitmproxy/Burp Suite) or sent directly to the backend.
+- The backend extracts features, cleans data, and passes it to the ML models (XGBoost for attack detection, SVM/IsolationForest for behavioral anomaly detection).
+- Predictions are made in real time, with results logged and sent to the frontend for display.
+- The frontend auto-updates tables and stats every 2 seconds, showing live activity.
+- User feedback and misclassified samples are stored for retraining, improving model accuracy over time.
+- Reports can be generated and downloaded, including all metrics and recent predictions.
+
+5. Why These Technologies?
+- XGBoost: Chosen for its speed, accuracy, and ability to handle complex tabular data. It is widely used in industry and competitions for its reliability and interpretability.
+- SVM: Used for behavioral anomaly detection due to its effectiveness in separating normal and abnormal patterns, especially in high-dimensional spaces. SVMs are robust to outliers and provide clear decision boundaries.
+- IsolationForest: Selected for unsupervised anomaly detection, as it isolates anomalies rather than profiling normal data. It is efficient and works well with large datasets.
+- Flask: Provides a simple, scalable way to build REST APIs and integrate with other tools.
+- mitmproxy/Burp Suite: Enables interception and analysis of live web traffic, supporting penetration testing and real-world attack simulation.
+- Docker: Ensures the application can be deployed consistently across environments.
+
+6. Application Details and Features
+- Real-time attack detection and blocking
+- Behavioral anomaly analysis using session features (duration, frequency, diversity)
+- Persistent logging and downloadable reports for compliance
+- Responsive, modern UI with live updates and detailed prediction explanations
+- Proxy integration for live traffic monitoring and penetration testing
+- Automatic data cleaning and robust error handling
+- Graceful shutdown and safe server exit
+- Continuous improvement via feedback and retraining
+
+7. Comparison to Existing Products
+- Most commercial WAFs (Web Application Firewalls) rely on static rules and signatures, making them vulnerable to zero-day and novel attacks.
+- This project uses AI/ML to learn from data, adapt to new threats, and provide explainable predictions.
+- Behavioral analytics and anomaly detection are rarely included in standard products, giving this framework an edge in detecting sophisticated attacks.
+- Real-time retraining and feedback integration allow the system to evolve, unlike static commercial solutions.
+
+8. Metrics and Results
+- F1 Score, Recall, Precision, Accuracy: Computed on test and live data, with mean CV accuracy of 0.8438 ± 0.0019.
+- Feature Importance: Top features include payload length, suspicious keywords, session duration, and request frequency.
+- SHAP values provide transparency into model decisions.
+- Persistent logs and downloadable reports document all activity for audit and compliance.
+
+9. Conclusion
+This AI-based security framework provides a robust, adaptive, and transparent solution for web application protection. By combining state-of-the-art ML models, behavioral analytics, and real-time traffic analysis, it addresses the limitations of traditional security products and meets the demands of modern web environments.
+
+10. Dataset and Model Training Details
+- The dataset `processed_web_traffic.csv` was selected because it contains a diverse, labeled collection of real-world and synthetic web traffic, including both benign and malicious requests. It is pre-processed to remove noise, handle missing values, and encode categorical features, ensuring robust model training. This dataset provides a controlled environment for initial model development, benchmarking, and reproducibility. It includes a wide range of attack types and normal user behaviors, making it suitable for training a generalizable model.
+- Real-time data is not used for initial model training because it is often unlabeled, noisy, and may not contain enough attack samples for effective supervised learning. Training on historical, labeled data allows for proper validation, metric computation, and model tuning. Once the model is deployed, real-time data is used for live predictions, logging, and feedback-driven retraining, allowing the system to adapt and improve over time.
+- The model is trained using the cleaned dataset, with features engineered for both content and behavioral analysis. The training process includes:
+  - Data cleaning: Removing problematic columns, converting types, and encoding labels.
+  - Feature engineering: Extracting session features, payload characteristics, and anomaly scores.
+  - Model fitting: Using XGBoost for classification, with cross-validation to prevent overfitting.
+  - Metrics computed: Precision, recall, F1-score, accuracy, and feature importance.
+  - Example results:
+    Train accuracy: 0.8437
+    Test accuracy: 0.8445
+    Overfitting score (train - test): -0.0009
+    Precision, recall, F1-score (see below)
+    Cross-validation accuracy scores: [0.8449 0.8442 0.8418 0.8466 0.8417]
+    Mean CV accuracy: 0.8438 ± 0.0019
+- Multiple models were evaluated, including XGBoost, SVM, and IsolationForest. XGBoost was chosen for the main classifier because it consistently outperformed others in accuracy, speed, and robustness to noisy/tabular data. SVM is used for behavioral anomaly detection due to its effectiveness in separating normal and abnormal patterns in high-dimensional feature space. IsolationForest is used for unsupervised anomaly detection, flagging outliers in user behavior.
+- XGBoost was selected after empirical testing on the project dataset. It provided the best balance of accuracy, interpretability (feature importance), and computational efficiency. Its ability to handle missing data and categorical features made it ideal for web traffic analysis. Other models (e.g., deep learning) were considered but found less suitable due to the tabular nature of the data and the need for explainable results.
+- SVM is used for behavioral anomaly detection because it can effectively model the boundary between normal and abnormal user activity, even with limited attack samples. IsolationForest is used for unsupervised anomaly detection, as it isolates anomalies without requiring labeled data, making it valuable for flagging novel or zero-day attacks.
+- After deployment, the system logs all predictions and user feedback. Misclassified samples and new attack patterns are used for retraining, allowing the model to evolve and improve in real time. This feedback loop is a key differentiator from static, rule-based systems.
+
+For diagrams, code samples, and further details, see README.md and code comments throughout the project.

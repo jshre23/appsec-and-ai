@@ -1,0 +1,43 @@
+[
+  {
+    "url": "/login.php?user=admin",
+    "request_body": "username=admin&password=1234",
+    "label": "malicious",
+    "reason": "No suspicious features detected.",
+    "attack_type": "unknown",
+    "features": {
+      "URL": "/login.php?user=admin",
+      "request_body": "username=admin&password=1234",
+      "Method": "POST",
+      "User-Agent": "Mozilla/5.0",
+      "host": "localhost",
+      "content-type": "application/x-www-form-urlencoded",
+      "url_domain": "example.com",
+      "url_length": 24,
+      "num_params": 2,
+      "has_login": 1,
+      "user_agent_length": 12,
+      "content_type_length": 9,
+      "has_suspicious_keywords": 0,
+      "body_length": 20,
+      "body_has_suspicious": 0,
+      "param_entropy": 1.2,
+      "num_param_names": 2,
+      "body_special_char_count": 1,
+      "requests_per_session": 1,
+      "session_duration": 30,
+      "mean_time_between_reqs": 10,
+      "unique_endpoints": 1,
+      "user_agent_changes": 0,
+      "session_duration_z": 0.1,
+      "session_duration_outlier": 0,
+      "behavior_anomaly_score": 0.01,
+      "behavioral_anomaly_flag": 0,
+      "svm_anomaly_score": 0.02,
+      "svm_anomaly_flag": 0
+    },
+    "warning": false,
+    "behavioral_anomaly_flag": 0,
+    "timestamp": "2025-08-13T12:47:57.647095Z"
+  }
+]
