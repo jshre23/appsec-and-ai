@@ -50,6 +50,17 @@ plt.ylim(0,1)
 plt.title('Accuracy')
 plt.show()
 
+# Confusion Matrix
+from sklearn.metrics import confusion_matrix
+cm = confusion_matrix(y_test, y_pred)
+plt.figure(figsize=(4,3))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=['Benign','Malicious'], yticklabels=['Benign','Malicious'])
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+plt.title('Confusion Matrix')
+plt.tight_layout()
+plt.show()
+
 # Correlation heatmap
 plt.figure(figsize=(8,6))
 corr = df.corr(numeric_only=True)

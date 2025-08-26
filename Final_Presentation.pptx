@@ -1,0 +1,76 @@
+<ppt>
+<slide>
+<title>Web Application Attack Detection Using Hybrid Machine Learning</title>
+<content>
+- Presented by: [Your Name]
+- Professor: [Professor’s Name]
+- Date: August 27, 2025
+</content>
+</slide>
+<slide>
+<title>Problem Statement</title>
+<content>
+- Web applications face evolving attack threats
+- Need for real-time, accurate, and interpretable detection
+- Existing solutions lack adaptability and transparency
+</content>
+</slide>
+<slide>
+<title>Background & Research</title>
+<content>
+- Machine learning in cybersecurity
+- Supervised vs. unsupervised models
+- Importance of feature engineering and explainability
+- Related work: strengths and gaps
+</content>
+</slide>
+<slide>
+<title>Methodology</title>
+<content>
+- Hybrid approach: XGBoost (supervised), Isolation Forest (unsupervised)
+- Custom dataset generation (Burp Suite, mitmproxy, simulation scripts)
+- Feature selection: payload length, user agent, behavioral scores
+- Evaluation metrics: accuracy, precision, recall, F1-score, confusion matrix
+</content>
+</slide>
+<slide>
+<title>Implementation</title>
+<content>
+- Python, Flask backend
+- Docker for deployment
+- Integration with security tools
+- SHAP for model interpretability
+- Logging and feedback for retraining
+</content>
+</slide>
+<slide>
+<title>Results</title>
+<content>
+- Accuracy: ~84%
+- Recall for attacks: 83%
+- F1-score: 0.75
+- Confusion matrix: strong detection, some false positives
+- Feature importance and SHAP plots
+- Balanced performance, low overfitting
+</content>
+</slide>
+<slide>
+<title>Limitations & Analysis</title>
+<content>
+- No latency, ROC-AUC, or public benchmarks measured
+- Moderate precision for attacks (some false alarms)
+- Misclassifications in ambiguous cases
+- Need for periodic retraining
+- Analysis supports technical viability and practical impact
+</content>
+</slide>
+<slide>
+<title>Conclusion & Future Work</title>
+<content>
+- Achieved real-time, interpretable attack detection
+- Hybrid model adapts to new threats
+- Supports security analysts with actionable insights
+- Future work: operational metrics, feature diversity, improved anomaly handling
+</content>
+</slide>
+</ppt>
