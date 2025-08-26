@@ -8,7 +8,7 @@ from datetime import datetime
 from flask import Blueprint
 integrations_api = Blueprint('integrations_api', __name__)
 
-@integrations_api.route('/integrations/forward', methods=['POST'])
+@integrations_api.route('/forward', methods=['POST'])
 def forward_request():
     req_json = request.get_json(force=True)
     # Fill missing fields with safe defaults

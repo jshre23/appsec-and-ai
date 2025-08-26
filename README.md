@@ -33,8 +33,11 @@ This tool is a modern, standalone web security API for detecting and simulating 
 - **/last_predictions**: Get recent predictions for the dashboard.
 
 ## Integration with Burp Suite/ZAP
-- See `integrations/BURP_ZAP_INTEGRATION.md` for step-by-step instructions and sample scripts.
-- Use `/integrations/forward` endpoint to POST requests from your security tool for real-time analysis.
+- 🚀 **Quick Start**: Run `./start_integration.sh` to start all services automatically
+- 📖 **Full Guide**: See `integrations/BURP_ZAP_INTEGRATION.md` for detailed setup instructions
+- 🔗 **Architecture**: Burp Suite → mitmproxy → AI Security Tool
+- 📡 **API Endpoint**: Use `/integrations/forward` to POST requests for real-time analysis
+- 🧪 **Examples**: Run `python integration_examples.py` for usage demonstrations
 
 
 ## Extended Quick Start

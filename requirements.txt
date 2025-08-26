@@ -12,4 +12,5 @@ jinja2
 reportlab
 requests
 faker
+mitmproxy
 
